@@ -1,0 +1,140 @@
+You are editing LaTeX, TikZ, and PGFPlots code that has already been processed
+by deterministic cleaning functions.
+
+Your task is to:
+
+1. remove all remaining visible human-readable text, and
+2. remove all LaTeX comments,
+
+while preserving all numbers, mathematical content, graphics, data, and LaTeX
+structure.
+
+Most important rule:
+
+KEEP EVERY NUMBER UNCHANGED.
+
+Do not remove, hide, replace, disable, or rewrite any number. This applies to
+both visible numbers and internal source-code numbers.
+
+Numbers that must remain include:
+
+- axis tick values
+- coordinate labels
+- numeric annotations
+- percentages
+- dates written with digits
+- page numbers
+- equation numbers
+- list numbering
+- scientific notation
+- scale factors such as ×10^5
+- table values
+- plot data
+- TikZ coordinates
+- dimensions and lengths
+- line widths
+- rotation angles
+- color percentages
+- counters
+- numeric macro values
+- numeric values generated automatically by PGFPlots
+
+Do not disable tick labels, scale labels, exponents, or other automatically
+generated numeric content.
+
+Also preserve all mathematical content, including:
+
+- variables
+- formulas
+- equations
+- operators
+- Greek letters
+- superscripts
+- subscripts
+- mathematical symbols
+- numeric expressions
+
+Remove human-readable language such as:
+
+- captions and subcaptions
+- titles and headings
+- author names
+- prose and paragraphs
+- textual legend entries
+- textual axis labels
+- textual tick labels
+- annotations and notes
+- table cells containing words
+- list item text
+- footnotes
+- headers and footers containing words
+- link text
+- citation text
+- bibliography text
+- remaining Lorem Ipsum or blind-text commands
+- visible words produced by custom macros
+
+If visible content contains both text and numbers, remove only the textual
+part and preserve every number exactly.
+
+Remove all LaTeX comments.
+
+Comment-removal rules:
+
+- An unescaped % starts a LaTeX comment.
+- Remove the % and everything after it up to the end of that line.
+- Remove complete comment-only lines without leaving additional empty lines.
+- Preserve escaped percentage signs such as \%.
+- Do not interpret \% as the start of a comment.
+- Preserve percent signs that are required as visible percentage symbols.
+- Preserve the original LaTeX semantics when removing inline comments.
+- A line ending immediately following an unescaped % is part of the comment
+  and must not introduce an unintended space or paragraph.
+- Do not remove code that appears before an inline comment.
+- No LaTeX comments may remain in the returned source.
+
+Preserve:
+
+- the complete LaTeX document structure
+- document class and packages
+- environments
+- macro definitions needed for compilation
+- braces, brackets, and parentheses
+- TikZ paths and nodes as geometric objects
+- coordinates
+- shapes
+- styles
+- colors
+- fills
+- line widths
+- anchors
+- transformations
+- axes
+- grids
+- tick positions
+- plot data
+- dimensions
+- spacing
+- layout
+
+Prefer emptying only the text-bearing argument instead of deleting the
+surrounding command or environment.
+
+Make the smallest possible changes. Do not reformat or rewrite unrelated code.
+Do not invent new content.
+
+The result must remain complete, syntactically valid, and compilable LaTeX.
+
+Before returning the result, verify that:
+
+- no visible human-readable text remains
+- no LaTeX comments remain
+- escaped percentage signs such as \% remain unchanged
+- every number is still present and unchanged
+- mathematical content is unchanged
+- graphical structure is unchanged
+- the LaTeX structure is balanced
+
+Return only the complete modified LaTeX source code.
+Do not use Markdown code fences.
+Do not add explanations or new comments.

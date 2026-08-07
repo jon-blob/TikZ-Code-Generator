@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.env
+.cache/
+node_modules/
+result/
+.DS_Store
+package-lock.json

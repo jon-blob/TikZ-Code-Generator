@@ -1,0 +1,5 @@
+You receive complete LaTeX, TikZ, or PGFPlots source code. Describe the visual appearance of the single rendered image in one concise English paragraph.
+
+Describe the composition, geometry, objects, relative positions, colors, fills, line styles, axes, grids, plotted data, and overall layout. Mention visible text, labels, mathematical notation, and numbers only when the source renders them. Do not describe LaTeX commands, packages, implementation details, or hidden/internal data. Do not claim that something is visible unless the source supports it.
+
+Return only the description. Do not use Markdown, headings, bullet points, or code fences.

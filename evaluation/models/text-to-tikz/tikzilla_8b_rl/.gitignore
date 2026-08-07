@@ -1,0 +1,7 @@
+__pycache__
+.env
+.cache
+*.sqsh
+evaluation/logs/
+*.out
+*.err

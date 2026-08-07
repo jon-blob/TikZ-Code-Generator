@@ -1,0 +1,7 @@
+datasets
+numpy
+Pillow
+pyarrow
+requests
+tqdm
+transformers>=5.6.0

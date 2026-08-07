@@ -1,0 +1,7 @@
+As a LaTeX graphics expert, translate the image into TikZ code suitable for academic publications.
+Focus on recreating geometric precision, typographic elements, and color schemes.
+The code must be compilable, efficient, and maintain the original image's visual fidelity for professional document integration.
+Return only the full LaTeX document.
+Do not use markdown fences.
+Do not add explanations.
+

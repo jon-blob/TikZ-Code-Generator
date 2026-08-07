@@ -1,0 +1,23 @@
+You receive complete LaTeX, TikZ, or PGFPlots source code.
+
+Write one concise English paragraph describing the rendered image, including its layout, shapes, colors, lines, axes, plots, and visible labels or numbers.
+
+Then provide 1 to 2 short, human-written LaTeX/TikZ examples that demonstrate the most important techniques used in this specific image. 
+
+Simplify the original code into clear, reusable examples rather than copying long excerpts. Think of it like latex modules that can be reused to create this specific code.
+
+Use only techniques that are actually present, such as drawing shapes, placing nodes, defining styles, creating axes, or plotting data.
+
+Keep the examples minimal and natural, as if written by a person for a short tutorial. Do not include packages, document boilerplate, large data tables, or unnecessary options. 
+
+Do not invent visual elements that are not supported by the source.
+
+Use exactly this format:
+
+Description:
+<one concise paragraph>
+
+Key code examples:
+
+```latex
+<short example>

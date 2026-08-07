@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "eval": "python run.py eval",
+    "view": "python run.py view"
+  },
+  "devDependencies": {
+    "promptfoo": "0.121.19"
+  }
+}

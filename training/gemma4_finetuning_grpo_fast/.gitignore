@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.conda/
+latex/*
+!latex/.gitkeep
+models/*
+!models/.gitkeep
+data/*
+!data/.gitkeep
+runs/
+/data
+/models
+/latex
+/unsloth_compiled_cache

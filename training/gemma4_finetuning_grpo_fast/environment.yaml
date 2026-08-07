@@ -1,0 +1,71 @@
+name: gemma4-finetuning
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.13
+  - pip
+  - git
+  - git-lfs
+  - cmake
+  - ninja
+  - pkg-config
+  - make
+  - gcc
+  - gxx
+  - poppler
+  - ghostscript
+  - fontconfig
+
+  - pip:
+      # PyTorch with CUDA 12.8 support
+      - --extra-index-url https://download.pytorch.org/whl/cu128
+      - torch==2.10.0
+      - torchvision==0.25.0
+      - torchaudio==2.10.0
+
+      # Unsloth training stack
+      - unsloth==2026.7.4
+      - unsloth-zoo==2026.7.4
+      - transformers==5.5.0
+      - trl
+      - accelerate
+      - peft>=0.2,<1
+      - bitsandbytes
+      - xformers
+
+      # Dataset handling
+      - datasets
+      - pandas
+      - pyarrow
+
+      # Metric dependencies
+      - Pillow>=10,<13
+      - crystalbleu>=0.1,<1
+      - dreamsim==0.2.1
+      - huggingface-hub
+      - numpy>=1.26,<3
+      - protobuf>=5,<7
+      - pygments>=2.17,<3
+      - sacremoses>=0.1,<1
+      - scikit-image>=0.22,<1
+      - sentencepiece>=0.2,<1
+      - torchmetrics>=1.7,<2
+      - nltk
+
+      # Visual metrics
+      - open-clip-torch
+      - scipy
+      - opencv-python-headless
+
+      # General utilities
+      - pyyaml
+      - tqdm
+      - psutil
+      - packaging
+      - safetensors
+
+      # Logging
+      - tensorboard
+

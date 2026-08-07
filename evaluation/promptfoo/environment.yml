@@ -1,0 +1,14 @@
+name: promptfoo-tikz
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12
+  - nodejs>=22.22,<25
+  - pip
+  - poppler
+  - ghostscript
+  - fontconfig
+  - git
+  - pip:
+      - -r requirements.txt

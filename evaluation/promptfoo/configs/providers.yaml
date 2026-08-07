@@ -1,0 +1,248 @@
+- id: http
+  label: "gemma4:31b-it-q4_K_M"
+  config: &ollama_config
+    url: "http://127.0.0.1:8444/generate"
+    method: POST
+    timeout: 900000
+    maxRetries: 0
+    validateStatus: "status >= 200 && status < 300"
+    transformResponse: &ollama_transform |
+      ({
+        output: json.output ?? "",
+        metadata: {
+          thinking_length: Number(json.thinking_length ?? 0)
+        }
+      })
+    multipart:
+      parts:
+        - &ollama_image
+          kind: file
+          name: image
+          filename: input.png
+          contentType: image/png
+          source:
+            type: path
+            path: "{{reference_image}}"
+
+        - &ollama_description
+          kind: file
+          name: llm_description
+          filename: description.txt
+          contentType: text/plain
+          source:
+            type: path
+            path: "{{llm_description}}"
+
+        - &ollama_prompt
+          kind: field
+          name: prompt
+          value: "{{prompt}}"
+
+        - &ollama_use_description
+          kind: field
+          name: use_llm_description
+          value: "false"
+
+        - &ollama_debug
+          kind: field
+          name: debug
+          value: "true"
+
+        - kind: field
+          name: model
+          value: "gemma4:31b-it-q4_K_M"
+
+        - &ollama_think
+          kind: field
+          name: think
+          value: "false"
+
+        - &ollama_num_predict
+          kind: field
+          name: num_predict
+          value: "8192"
+
+        - &ollama_num_ctx
+          kind: field
+          name: num_ctx
+          value: "16384"
+
+        - &ollama_thinking_multiplier
+          kind: field
+          name: thinking_token_multiplier
+          value: "5"
+
+- id: http
+  label: "gemma4:12b-it-bf16"
+  config:
+    <<: *ollama_config
+    multipart:
+      parts:
+        - *ollama_image
+        - *ollama_description
+        - *ollama_prompt
+        - *ollama_use_description
+        - *ollama_debug
+        - kind: field
+          name: model
+          value: "gemma4:12b-it-bf16"
+        - *ollama_think
+        - *ollama_num_predict
+        - *ollama_num_ctx
+        - *ollama_thinking_multiplier
+
+- id: http
+  label: "qwen3-vl:8b-thinking-bf16"
+  config:
+    <<: *ollama_config
+    multipart:
+      parts:
+        - *ollama_image
+        - *ollama_description
+        - *ollama_prompt
+        - *ollama_use_description
+        - *ollama_debug
+        - kind: field
+          name: model
+          value: "qwen3-vl:8b-thinking-bf16"
+        - *ollama_think
+        - *ollama_num_predict
+        - *ollama_num_ctx
+        - *ollama_thinking_multiplier
+
+- id: http
+  label: "qwen3-vl:8b-instruct-bf16"
+  config:
+    <<: *ollama_config
+    multipart:
+      parts:
+        - *ollama_image
+        - *ollama_description
+        - *ollama_prompt
+        - *ollama_use_description
+        - *ollama_debug
+        - kind: field
+          name: model
+          value: "qwen3-vl:8b-instruct-bf16"
+        - *ollama_num_predict
+        - *ollama_num_ctx
+
+- id: http
+  label: "qwen3.5:9b-bf16"
+  config:
+    <<: *ollama_config
+    multipart:
+      parts:
+        - *ollama_image
+        - *ollama_description
+        - *ollama_prompt
+        - *ollama_use_description
+        - *ollama_debug
+        - kind: field
+          name: model
+          value: "qwen3.5:9b-bf16"
+        - *ollama_think
+        - *ollama_num_predict
+        - *ollama_num_ctx
+        - *ollama_thinking_multiplier
+
+
+- id: http
+  label: "qwen3.6:35b-a3b"
+  config:
+    <<: *ollama_config
+    multipart:
+      parts:
+        - *ollama_image
+        - *ollama_description
+        - *ollama_prompt
+        - *ollama_use_description
+        - *ollama_debug
+        - kind: field
+          name: model
+          value: "qwen3.6:35b-a3b"
+        - *ollama_think
+        - *ollama_num_predict
+        - *ollama_num_ctx
+        - *ollama_thinking_multiplier
+
+
+- id: http
+  label: "gemma4-31B-it-tikz-rl-loss-125"
+  config:
+    <<: *ollama_config
+    multipart:
+      parts:
+        - *ollama_image
+        - *ollama_description
+        - *ollama_prompt
+        - *ollama_use_description
+        - *ollama_debug
+        - kind: field
+          name: model
+          value: "gemma4-31B-it-tikz-rl-loss-125:latest"
+        - *ollama_think
+        - *ollama_num_predict
+        - *ollama_num_ctx
+        - *ollama_thinking_multiplier
+
+
+- id: http
+  label: geotikzbridge-8b
+  config:
+    url: "http://127.0.0.1:8007/geotikzbridge"
+    method: POST
+    timeout: 900000
+    validateStatus: "status >= 200 && status < 300"
+    transformResponse: "json.tikz"
+    multipart:
+      parts:
+        - kind: file
+          name: image
+          filename: input.png
+          contentType: image/png
+          source:
+            type: path
+            path: "{{input_image}}"
+
+        - kind: file
+          name: llm_description
+          filename: description.txt
+          contentType: text/plain
+          source:
+            type: path
+            path: "{{llm_description}}"
+
+        - kind: field
+          name: prompt
+          value: "{{prompt}}"
+
+        - kind: field
+          name: use_llm_description
+          value: "false"
+
+        - kind: field
+          name: debug
+          value: "true"
+
+- id: http
+  label: detikzify-2-5-8b
+  config:
+    url: "http://127.0.0.1:8000/detikzify"
+    method: POST
+    timeout: 900000
+    validateStatus: "status >= 200 && status < 300"
+    transformResponse: "json.tikz"
+    multipart:
+      parts:
+        - kind: file
+          name: image
+          filename: input.png
+          contentType: image/png
+          source:
+            type: path
+            path: "{{input_image}}"
+
+        - kind: field
+          name: expansions
+          value: "10"

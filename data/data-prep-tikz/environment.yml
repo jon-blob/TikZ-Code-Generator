@@ -1,0 +1,25 @@
+name: tikz
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.13
+  - pip
+  - texlive-core
+  - poppler
+
+  - pip:
+      - datasets==5.0.0
+      - multiprocess==0.70.17
+      - dill==0.4.1
+      - pyarrow==25.0.0
+      - pandas
+      - numpy
+      - pillow
+      - tqdm
+      - requests
+      - transformers
+      - tokenizers
+      - sentencepiece
+      - protobuf
