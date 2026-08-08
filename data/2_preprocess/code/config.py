@@ -11,9 +11,9 @@ ROOT = Path(__file__).resolve().parent
 # Paths
 DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4")
 BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-not-clean")
-OUTPUT_DIR = Path("/home/jonas/PycharmProjects/TikZ-Code-Generator/data/preprocessed")
+OUTPUT_DIR = Path("../../preprocessed")
 TOKENIZER_PATH = Path("/home/jonas/models/gemma-4-31B-it-unsloth-bnb-4bit")
-PROMPT_PATH = Path("/home/jonas/PycharmProjects/TikZ-Code-Generator/data/2_preprocess/prompts/description_prompt.txt")
+PROMPT_PATH = Path("../prompts/description_prompt.txt")
 
 STAGING_DIR = OUTPUT_DIR / "staging"
 METADATA_DIR = OUTPUT_DIR / "metadata"
@@ -57,7 +57,7 @@ RENDER_WORKERS = max(1, min(8, os.cpu_count() or 1))
 CLIP_MODEL = "openai/clip-vit-base-patch32"
 CLIP_DEVICE = "auto"
 CLIP_BATCH_SIZE = 64
-CLIP_THRESHOLD = 0.95
+CLIP_THRESHOLD = 0.85
 MIN_INK_FRACTION = 0.002
 
 # Clustering and descriptions
