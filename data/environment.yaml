@@ -1,4 +1,4 @@
-name: tikz
+name: data-tools
 
 channels:
   - conda-forge
@@ -23,3 +23,6 @@ dependencies:
       - tokenizers
       - sentencepiece
       - protobuf
+      - torch
+      - scikit-learn
+      - matplotlib
