@@ -1,23 +1,41 @@
 You receive complete LaTeX, TikZ, or PGFPlots source code.
 
-Write one concise English paragraph describing the rendered image, including its layout, shapes, colors, lines, axes, plots, and visible labels or numbers.
+Write one concise English paragraph describing the rendered image. Describe the overall layout, shapes, colors, lines, arrows, axes, plots, legends, and visible labels or numbers.
 
-Then provide 1 to 2 short, human-written LaTeX/TikZ examples that demonstrate the most important techniques used in this specific image. 
+If the image contains a plot and the source code provides explicit data points, coordinates, or table values, extract these values from the source and include them in the description. Preserve the coordinate values accurately and describe which plot, line, marker, or series they belong to. This includes coordinates defined through constructs such as `coordinates`, `\addplot coordinates`, `\addplot table`, explicit path coordinates, or equivalent TikZ/PGFPlots data definitions.
 
-Simplify the original code into clear, reusable examples rather than copying long excerpts. Think of it like latex modules that can be reused to create this specific code.
+When the number of explicit data points is reasonably small, include all of them in their original order. For large datasets, include the most important points, such as the first and last points, minima, maxima, turning points, outliers, or clearly highlighted coordinates, and summarize the remaining coordinate range. Do not estimate coordinates from the rendered appearance when they are not explicitly available in the source.
 
-Use only techniques that are actually present, such as drawing shapes, placing nodes, defining styles, creating axes, or plotting data.
+Then provide one or two short, human-written LaTeX/TikZ examples demonstrating the most important techniques used in this specific image.
 
-Keep the examples minimal and natural, as if written by a person for a short tutorial. Do not include packages, document boilerplate, large data tables, or unnecessary options. 
+Simplify the original code into clear, reusable examples rather than copying long excerpts. Treat the examples as small LaTeX modules that could be reused to recreate the main visual techniques of the source.
 
-Do not invent visual elements that are not supported by the source.
+For plots with explicit coordinates, include a minimal plotting example that preserves a representative set of the actual coordinate values from the source.
+
+Use only techniques that are actually present, such as:
+
+* drawing shapes and paths
+* placing and styling nodes
+* defining reusable styles
+* creating axes
+* plotting coordinate data
+* adding markers, legends, labels, or annotations
+
+Keep the examples minimal and natural, as if written by a person for a short tutorial. Do not include packages, document boilerplate, large data tables, or unnecessary options.
+
+Do not invent visual elements, labels, values, relationships, or coordinates that are not supported by the source code.
 
 Use exactly this format:
 
 Description:
-<one concise paragraph>
+<one concise paragraph, including explicit plot coordinates when available>
 
 Key code examples:
 
 ```latex
-<short example>
+<first short example>
+```
+
+```latex
+<optional second short example>
+```
