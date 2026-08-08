@@ -183,59 +183,132 @@ class Enricher:
 
     @staticmethod
     def _splits() -> dict[str, str]:
-        datikz_rows = row_count("datikz")
-        if config.VAL_SIZE > datikz_rows:
-            raise ValueError(f"VAL_SIZE={config.VAL_SIZE} exceeds DaTikZ rows={datikz_rows}")
-
-        split_map: dict[str, str] = {}
-        for index, row in enumerate(iter_rows("datikz", ["sample_id"])):
-            split_map[row["sample_id"]] = "val" if index < config.VAL_SIZE else "train"
-        for row in iter_rows("benchmark", ["sample_id"]):
-            split_map[row["sample_id"]] = "benchmark"
+        split_map = {
+            row["sample_id"]: "train"
+            for row in iter_rows("datikz", ["sample_id"])
+        }
+        split_map.update({
+            row["sample_id"]: "benchmark"
+            for row in iter_rows("benchmark", ["sample_id"])
+        })
         return split_map
 
-    def _descriptions(self, assignments: dict[str, str], split_map: dict[str, str]) -> tuple[dict[str, str], dict]:
+    def _descriptions(
+        self,
+        assignments: dict[str, str],
+        split_map: dict[str, str],
+    ) -> tuple[dict[str, str], dict]:
         if config.DESCRIPTIONS_PER_CLASS <= 0:
             return {}, {"generated": 0}
 
-        limit = config.DESCRIPTIONS_PER_CLASS * config.DESCRIPTION_CANDIDATE_FACTOR
-        candidates: dict[str, list[tuple[str, str]]] = defaultdict(list)
-        for dataset_name in config.CLUSTER_DATASETS:
-            for row in iter_rows(dataset_name, ["sample_id", "reference_code"]):
-                class_name = assignments[row["sample_id"]]
-                if len(candidates[class_name]) < limit:
-                    candidates[class_name].append((row["sample_id"], row["reference_code"]))
+        limit = (
+            config.DESCRIPTIONS_PER_CLASS
+            * config.DESCRIPTION_CANDIDATE_FACTOR
+        )
+        candidates: dict[
+            tuple[str, str],
+            list[tuple[str, str]],
+        ] = defaultdict(list)
 
-        def generate_class(item: tuple[str, list[tuple[str, str]]]) -> tuple[str, dict[str, str], list[dict]]:
-            class_name, rows = item
+        for dataset_name in config.CLUSTER_DATASETS:
+            for row in iter_rows(
+                dataset_name,
+                ["sample_id", "reference_code"],
+            ):
+                class_name = assignments[row["sample_id"]]
+                key = (dataset_name, class_name)
+                if len(candidates[key]) < limit:
+                    candidates[key].append(
+                        (row["sample_id"], row["reference_code"])
+                    )
+
+        target = sum(
+            min(config.DESCRIPTIONS_PER_CLASS, len(rows))
+            for rows in candidates.values()
+        )
+        progress = tqdm(
+            total=target,
+            desc="Generate descriptions",
+            unit="description",
+            dynamic_ncols=True,
+        )
+
+        def generate_class(
+            item: tuple[
+                tuple[str, str],
+                list[tuple[str, str]],
+            ],
+        ) -> tuple[str, str, dict[str, str], list[dict]]:
+            (dataset_name, class_name), rows = item
             client = OllamaClient()
             generated: dict[str, str] = {}
             failures: list[dict] = []
+
             for sample_id, code in rows:
                 if len(generated) >= config.DESCRIPTIONS_PER_CLASS:
                     break
+
                 try:
                     generated[sample_id] = client.describe(code)
+                    progress.update(1)
                 except Exception as error:
-                    failures.append({"sample_id": sample_id, "class": class_name, "reason": repr(error)})
-            return class_name, generated, failures
+                    failures.append(
+                        {
+                            "dataset": dataset_name,
+                            "sample_id": sample_id,
+                            "class": class_name,
+                            "reason": repr(error),
+                        }
+                    )
+
+            return dataset_name, class_name, generated, failures
 
         descriptions: dict[str, str] = {}
         failures: list[dict] = []
-        workers = max(1, min(config.OLLAMA_WORKERS, len(candidates)))
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            for _, generated, class_failures in executor.map(generate_class, sorted(candidates.items())):
-                descriptions.update(generated)
-                failures.extend(class_failures)
+        workers = max(
+            1,
+            min(config.OLLAMA_WORKERS, len(candidates)),
+        )
+
+        try:
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                results = executor.map(
+                    generate_class,
+                    sorted(candidates.items()),
+                )
+                for dataset_name, class_name, generated, class_failures in results:
+                    descriptions.update(generated)
+                    failures.extend(class_failures)
+                    progress.set_postfix(
+                        dataset=dataset_name,
+                        class_name=class_name,
+                        failures=len(failures),
+                    )
+        finally:
+            progress.close()
 
         if failures:
             table = pa.Table.from_pylist(failures)
-            pq.write_table(table, config.REPORT_DIR / "description_failures.parquet")
+            pq.write_table(
+                table,
+                config.REPORT_DIR / "description_failures.parquet",
+            )
 
         return descriptions, {
             "generated": len(descriptions),
             "failures": len(failures),
-            "per_class": dict(Counter(assignments[sample_id] for sample_id in descriptions)),
+            "per_dataset": dict(
+                Counter(
+                    sample_id.split(":", 1)[0]
+                    for sample_id in descriptions
+                )
+            ),
+            "per_dataset_class": dict(
+                Counter(
+                    f"{sample_id.split(':', 1)[0]}:{assignments[sample_id]}"
+                    for sample_id in descriptions
+                )
+            ),
         }
 
     @staticmethod

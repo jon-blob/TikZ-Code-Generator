@@ -173,7 +173,7 @@ class FinalExporter:
         data_dir = config.EXPORT_DIR / "data"
         writers = {
             split: ShardWriter(data_dir, split, FINAL_SCHEMA, config.MAX_PARQUET_BYTES)
-            for split in ("benchmark", "train", "val")
+            for split in ("benchmark", "train")
         }
 
         for dataset_name in ("datikz", "benchmark"):
@@ -201,6 +201,22 @@ class FinalExporter:
     def _write_dataset_card(result: dict) -> None:
         lines = "\n".join(f"- `{name}`: {value['rows']} rows" for name, value in result.items())
         text = f"""---
+dataset_info:
+  features:
+  - name: input_image
+    dtype: image
+  - name: reference_image
+    dtype: image
+  - name: reference_code
+    dtype: string
+  - name: llm_description
+    dtype: string
+  - name: type
+    dtype: string
+  - name: source
+    dtype: string
+  - name: class
+    dtype: string
 configs:
 - config_name: default
   data_files:
@@ -208,8 +224,6 @@ configs:
     path: data/benchmark-*.parquet
   - split: train
     path: data/train-*.parquet
-  - split: val
-    path: data/val-*.parquet
 ---
 
 # Cleaned TikZ dataset

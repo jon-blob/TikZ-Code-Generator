@@ -9,8 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 # Paths
-DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4")
-BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-not-clean")
+DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4-test")
+BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-not-clean-test")
 OUTPUT_DIR = Path("../../preprocessed")
 TOKENIZER_PATH = Path("/home/jonas/models/gemma-4-31B-it-unsloth-bnb-4bit")
 PROMPT_PATH = Path("../prompts/description_prompt.txt")
@@ -45,7 +45,6 @@ BENCHMARK_ORIGINS: tuple[str, ...] = ()
 SEED = 42
 MAX_TOKENS = 4096
 TOKEN_BATCH_SIZE = 64
-VAL_SIZE = 10_000
 
 # Rendering and CLIP
 IMAGE_SIZE = 512
@@ -63,11 +62,11 @@ MIN_INK_FRACTION = 0.002
 # Clustering and descriptions
 # PCA and KMeans are fitted jointly on these staging datasets.
 CLUSTER_DATASETS = ("datikz", "benchmark")
-N_CLUSTERS = 6
+N_CLUSTERS = 4
 PCA_COMPONENTS = 50
 CLUSTER_BATCH_SIZE = 4_096
 CLASS_NAMES: dict[int, str] = {}
-DESCRIPTIONS_PER_CLASS = 250
+DESCRIPTIONS_PER_CLASS = 500
 DESCRIPTION_CANDIDATE_FACTOR = 3
 OLLAMA_URL = "http://localhost:11434"
 OLLAMA_MODEL = "qwen3-coder:30b-a3b-q4_K_M"
@@ -79,9 +78,9 @@ OLLAMA_WORKERS = 1
 MAX_PARQUET_BYTES = 134_000_000
 PARQUET_BUFFER_BYTES = 110_000_000
 STAGING_ROWS_PER_FILE = 10_000
-HF_REPO_ID = "loss-boss/tikz_dataset"
+HF_REPO_ID = "loss-boss/tikz-dataset-clean"
 HF_PRIVATE = False
-HF_TOKEN: str | None = None  # Uses the token from `huggingface-cli login`.
+HF_TOKEN: str | None = "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"  # Uses the token from `huggingface-cli login`.
 
 # Execution
 OVERWRITE = True
