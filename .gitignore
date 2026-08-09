@@ -2,3 +2,5 @@ __pycache__
 preprocessed
 *.csv
 *.npy
+dataset
+dataset-exported

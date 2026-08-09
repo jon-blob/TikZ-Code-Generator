@@ -36,3 +36,10 @@ hf download loss-boss/tikz-benchmark \
   --repo-type dataset \
   --local-dir ./dataset
 ```
+
+### Download final dataset
+```bash
+hf download loss-boss/tikz-dataset-clean \
+  --repo-type dataset \
+  --local-dir ./dataset
+```

@@ -9,8 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 # Paths
-DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4-test")
-BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-not-clean-test")
+DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4")
+BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-not-clean")
 OUTPUT_DIR = Path("../../preprocessed")
 TOKENIZER_PATH = Path("/home/jonas/models/gemma-4-31B-it-unsloth-bnb-4bit")
 PROMPT_PATH = Path("../prompts/description_prompt.txt")
