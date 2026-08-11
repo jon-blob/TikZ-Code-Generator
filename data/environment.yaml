@@ -26,3 +26,4 @@ dependencies:
       - torch
       - scikit-learn
       - matplotlib
+      - umap-learn

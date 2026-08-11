@@ -6,12 +6,12 @@ from helpers import Config
 
 
 CONFIG = Config(
-    input_dir=Path("../dataset"),
-    output_dir=Path("../dataset-exported"),
+    input_dir=Path("../preprocessed/huggingface/data"),
+    output_dir=Path("../preprocessed/dataset-exported"),
     benchmark_samples_per_class=20,
     val_samples_per_class=20,
-    train_crystalbleu_size=50_000,
-    train_size=100,
+    train_crystalbleu_size=50,
+    train_size=50000,
     balance_tolerance=0.10,
     seed=42,
     overwrite=True,

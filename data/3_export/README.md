@@ -23,6 +23,11 @@ or
 conda activate data-tools
 ```
 
+```bash
+hf download loss-boss/tikz-dataset-clean \
+  --repo-type dataset \
+  --local-dir ./dataset
+```
 
 ## Input data
 

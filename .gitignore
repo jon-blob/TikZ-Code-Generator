@@ -4,3 +4,4 @@ preprocessed
 *.npy
 dataset
 dataset-exported
+training/gemma4_finetuning/unsloth_compiled_cache

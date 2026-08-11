@@ -25,7 +25,9 @@ Reject failed, multi-page, invalid, or blank renders
         ↓
 Compare original and rendered images using image embeddings
         ↓
-Cluster DaTikZ-V4 and benchmark embeddings jointly
+Reduce the shared CLIP embedding space with PCA or UMAP
+        ↓
+Cluster jointly with MiniBatchKMeans or HDBSCAN
         ↓
 Generate LLM descriptions separately per dataset and class
         ↓
@@ -105,10 +107,10 @@ The enrichment stage adds cluster labels and LLM-generated descriptions to the c
 It performs the following operations:
 
 1. Read the CLIP embeddings from the staging datasets.
-2. Fit a shared PCA model on the configured datasets.
-3. Fit a shared MiniBatchKMeans model on the reduced embeddings.
+2. Reduce the shared embedding space with the configured reducer (`pca` or `umap`).
+3. Cluster the reduced embeddings with the configured algorithm (`kmeans` or `hdbscan`).
 4. Assign a cluster to every DaTikZ-V4 and benchmark sample.
-5. Convert cluster IDs into names such as `class_1`, `class_2`, and `class_3`.
+5. Convert non-noise cluster IDs into names such as `class_1`, `class_2`, and `class_3`; HDBSCAN noise is named `noise` by default.
 6. Generate a configured number of LLM descriptions per dataset and class.
 7. Assign every DaTikZ-V4 sample to `train`.
 8. Assign every self-collected sample to `benchmark`.
@@ -145,73 +147,93 @@ No validation split is created during preprocessing. A validation split can be s
 
 ## Joint clustering
 
-Image embeddings from DaTikZ-V4 and benchmark are used together to fit one shared `IncrementalPCA` model and one shared `MiniBatchKMeans` model.
+CLIP image embeddings from DaTikZ-V4 and benchmark are clustered jointly. The samples remain in their original datasets; only the shared embedding space is used for fitting.
 
-The embedding batches are read incrementally, so the complete embedding matrices do not have to fit into memory.
-
-Only the embeddings are combined. The samples remain in their original datasets, and the resulting cluster labels are written back separately.
-
-### PCA and clustering
-
-PCA and MiniBatchKMeans are fitted on the complete combined embedding set when both datasets are enabled.
-
-Dataset membership does not influence the clustering. It is retained only for analysis, separate description generation, split creation, and later sampling.
-
-The datasets used for clustering are configured in `code/config.py`:
+The default configuration uses the best-performing analysis setup:
 
 ```python
-CLUSTER_DATASETS = ("datikz", "benchmark")
+CLUSTER_REDUCER = "umap"
+CLUSTER_ALGORITHM = "hdbscan"
+UMAP_COMPONENTS = 20
 ```
 
-The combined fitting process can be summarized as:
+Both choices remain configurable:
+
+```python
+CLUSTER_REDUCER = "pca"       # "pca" or "umap"
+CLUSTER_ALGORITHM = "hdbscan" # "kmeans" or "hdbscan"
+```
+
+This allows all four combinations:
 
 ```text
-DaTikZ-V4 embeddings ─────┐
-                          ├── IncrementalPCA
-Benchmark embeddings ─────┘
-                                  ↓
-                          MiniBatchKMeans
-                                  ↓
-                  Separate cluster assignments
-                    for DaTikZ-V4 and benchmark
+PCA  -> KMeans
+PCA  -> HDBSCAN
+UMAP -> KMeans
+UMAP -> HDBSCAN
 ```
 
-### Clustering in high-dimensional spaces
+### PCA settings
 
-Clustering methods can become less reliable in high-dimensional spaces. This is often referred to as the **curse of dimensionality**.
-
-As the number of dimensions increases:
-
-* the embedding space becomes more sparse
-* distances between samples become less informative
-* distance-based clustering becomes more computationally expensive
-* noisy or redundant dimensions can negatively affect the cluster structure
-
-Dimensionality reduction methods such as PCA can help by removing noise and redundant information, reducing computational cost, and making distance-based clustering more stable.
-
-### Principal Component Analysis
-
-Principal Component Analysis reduces the dimensionality of the image embeddings while preserving as much relevant variation as possible.
-
-For example:
-
-```text
-Original embedding: 512 dimensions
-        ↓
-PCA
-        ↓
-Reduced embedding:   50 dimensions
+```python
+PCA_COMPONENTS = 20
 ```
 
-PCA is not strictly required, but it can:
+PCA uses incremental fitting, so `PCA -> KMeans` can continue to process embeddings in batches.
 
-* reduce memory usage
-* make clustering faster
-* remove noisy or redundant dimensions
-* improve the stability of distance-based clustering
-* support two-dimensional embedding visualizations
+### UMAP settings
 
-The number of PCA components is configured in `code/config.py`.
+```python
+UMAP_COMPONENTS = 20
+UMAP_N_NEIGHBORS = 30
+UMAP_MIN_DIST = 0.0
+UMAP_METRIC = "cosine"
+```
+
+UMAP requires `umap-learn`:
+
+```bash
+pip install umap-learn
+```
+
+Unlike the incremental PCA path, UMAP needs the joint embedding matrix in memory while it is fitted. For very large staging datasets this can require substantially more RAM.
+
+### KMeans settings
+
+```python
+N_CLUSTERS = 6
+```
+
+`N_CLUSTERS` is used only when `CLUSTER_ALGORITHM = "kmeans"`.
+
+### HDBSCAN settings
+
+```python
+HDBSCAN_MIN_CLUSTER_SIZE = 200
+HDBSCAN_MIN_SAMPLES = 20
+HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
+HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
+HDBSCAN_METRIC = "euclidean"
+HDBSCAN_NOISE_CLASS = "noise"
+```
+
+HDBSCAN determines the number of clusters automatically. Samples assigned label `-1` are kept and written with the configured noise class name.
+
+The fitted reducer and clusterer are stored under `METADATA_DIR / "models"`.
+
+### Re-running only clustering and descriptions
+
+Existing rendered staging data can be reused. To recompute only classes and descriptions without rendering again, use for example:
+
+```python
+OVERWRITE = True
+RUN_PREPROCESSING = False
+RUN_ENRICHMENT = True
+RUN_EXPORT = False
+RUN_UPLOAD = False
+```
+
+With preprocessing disabled, `OVERWRITE=True` no longer deletes `STAGING_DIR`; it only replaces outputs belonging to the enabled later stages.
 
 ## Hugging Face upload
 

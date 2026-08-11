@@ -9,8 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 
 # Paths
-DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4")
-BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-not-clean")
+DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4-raw-test")
+BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-raw-test")
 OUTPUT_DIR = Path("../../preprocessed")
 TOKENIZER_PATH = Path("/home/jonas/models/gemma-4-31B-it-unsloth-bnb-4bit")
 PROMPT_PATH = Path("../prompts/description_prompt.txt")
@@ -60,13 +60,34 @@ CLIP_THRESHOLD = 0.85
 MIN_INK_FRACTION = 0.002
 
 # Clustering and descriptions
-# PCA and KMeans are fitted jointly on these staging datasets.
+# The reducer and clusterer are fitted jointly on these staging datasets.
+# Recommended setup from the analysis notebook: CLIP -> UMAP(20) -> HDBSCAN.
 CLUSTER_DATASETS = ("datikz", "benchmark")
-N_CLUSTERS = 4
-PCA_COMPONENTS = 50
+CLUSTER_REDUCER = "umap"       # "pca" or "umap"
+CLUSTER_ALGORITHM = "hdbscan"  # "kmeans" or "hdbscan"
+
+# Dimensionality reduction
+PCA_COMPONENTS = 20
+UMAP_COMPONENTS = 20
+UMAP_N_NEIGHBORS = 30
+UMAP_MIN_DIST = 0.0
+UMAP_METRIC = "cosine"
+
+# KMeans (used only when CLUSTER_ALGORITHM == "kmeans")
+N_CLUSTERS = 6
+
+# HDBSCAN (used only when CLUSTER_ALGORITHM == "hdbscan")
+HDBSCAN_MIN_CLUSTER_SIZE = 200
+HDBSCAN_MIN_SAMPLES = 20
+HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
+HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
+HDBSCAN_METRIC = "euclidean"
+HDBSCAN_N_JOBS = -1
+HDBSCAN_NOISE_CLASS = "noise"
+
 CLUSTER_BATCH_SIZE = 4_096
 CLASS_NAMES: dict[int, str] = {}
-DESCRIPTIONS_PER_CLASS = 300
+DESCRIPTIONS_PER_CLASS = 10
 DESCRIPTION_CANDIDATE_FACTOR = 3
 OLLAMA_URL = "http://localhost:11434"
 OLLAMA_MODEL = "qwen3-coder:30b-a3b-q4_K_M"
@@ -80,7 +101,7 @@ PARQUET_BUFFER_BYTES = 110_000_000
 STAGING_ROWS_PER_FILE = 10_000
 HF_REPO_ID = "loss-boss/tikz-dataset-clean"
 HF_PRIVATE = False
-HF_TOKEN: str | None = "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"  # Uses the token from `huggingface-cli login`.
+HF_TOKEN: str | None = "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"  # Uses the token from `hf auth login` when available.
 
 # Execution
 OVERWRITE = True
@@ -91,4 +112,6 @@ RUN_UPLOAD = True
 
 
 def class_name(cluster_id: int) -> str:
+    if cluster_id < 0:
+        return HDBSCAN_NOISE_CLASS
     return CLASS_NAMES.get(cluster_id, f"class_{cluster_id + 1}")

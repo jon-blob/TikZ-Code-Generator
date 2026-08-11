@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "data"
-MODELS_DIR = ROOT / "models"
+DATA_DIR = Path("../../data/preprocessed/dataset-exported/train")
+MODELS_DIR = Path("/home/jonas/models")
 PROMPTFOO_DIR = ROOT.parent.parent / "evaluation" / "promptfoo"
 LATEX_DIR = ROOT / "latex"
 INSTRUCTION_FILE = ROOT / "prompts" / "instruction.txt"
@@ -26,18 +26,18 @@ def configure_runtime() -> None:
 
 @dataclass(slots=True)
 class SFTConfig:
-    model_name: str = str(MODELS_DIR / "gemma-4-31B-it")
+    model_name: str = str(MODELS_DIR / "gemma-4-12B-it")
     load_in_4bit: bool = False
     enable_thinking: bool = False
     use_llm_description: bool = USE_LLM_DESCRIPTION
     
     dataset_path: Path = DATA_DIR
-    train_manifest: str = "manifest_train.csv"
-    val_manifest: str = "manifest_val.csv"
+    train_manifest: str = "train/manifest.csv"
+    val_manifest: str = "val/manifest.csv"
     instruction_path: Path = INSTRUCTION_FILE
-    image_column: str = "image_path"
-    code_column: str = "code_path"
-    vlm_description_column: str = "vlm_description_path"
+    image_column: str = "input_image"
+    code_column: str = "reference_code"
+    vlm_description_column: str = "llm_description"
 
     output_dir: Path = MODELS_DIR / "sft" / "checkpoints"
     lora_output_dir: Path = MODELS_DIR / "sft" / "lora"
@@ -48,18 +48,26 @@ class SFTConfig:
     lora_alpha: int = 32
     seed: int = 3407
     num_examples_train: int | None = None
-    num_examples_val: int | None = 1000
+    num_examples_val: int | None = 80
 
-    learning_rate: float = 3e-6
+    learning_rate: float = 3e-5
     epochs: float = 1.0
     max_steps: int = -1
     save_steps: int = 25
     eval_steps: int = 25
     logging_steps: int = 1
-    warmup_steps: int = 200
+    warmup_steps: int = 10
     batch_size: int = 1
-    gradient_accumulation_steps: int = 32
+    gradient_accumulation_steps: int = 1
     resume_from_checkpoint: bool = False
+
+    image_paths_for_callback = [
+            f"{DATA_DIR}/val/reference_image/class_1_00000001.png",
+            f"{DATA_DIR}/val/reference_image/class_2_00000001.png",
+            f"{DATA_DIR}/val/reference_image/class_3_00000001.png",
+            f"{DATA_DIR}/val/reference_image/class_4_00000001.png",
+        ]
+
 
 
 @dataclass(slots=True)

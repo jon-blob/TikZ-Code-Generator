@@ -19,14 +19,14 @@ class Pipeline:
 
     def prepare(self) -> None:
         if config.OVERWRITE:
-            for path in (
-                config.STAGING_DIR,
-                config.METADATA_DIR,
-                config.REPORT_DIR,
-                config.FAILURE_DIR,
-                config.EXPORT_DIR,
-            ):
-                shutil.rmtree(path, ignore_errors=True)
+            if config.RUN_PREPROCESSING:
+                shutil.rmtree(config.STAGING_DIR, ignore_errors=True)
+                shutil.rmtree(config.FAILURE_DIR, ignore_errors=True)
+            if config.RUN_ENRICHMENT:
+                shutil.rmtree(config.METADATA_DIR, ignore_errors=True)
+            if config.RUN_EXPORT:
+                shutil.rmtree(config.EXPORT_DIR, ignore_errors=True)
+            shutil.rmtree(config.REPORT_DIR, ignore_errors=True)
 
         for path in (
             config.CACHE_DIR,
