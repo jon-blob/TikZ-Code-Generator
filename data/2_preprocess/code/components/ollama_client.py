@@ -56,6 +56,7 @@ class OllamaClient:
             "options": {
                 "temperature": config.OLLAMA_TEMPERATURE,
                 "num_predict": config.OLLAMA_NUM_PREDICT,
+                "num_ctx": config.OLLAMA_NUM_CTX,
             },
         }
         if images:

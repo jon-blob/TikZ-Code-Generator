@@ -85,7 +85,7 @@ REPETITION_NGRAM_WEIGHTS = {
 }
 REPETITION_MIN_REPEAT_COUNT = 2
 REPETITION_MEDIUM_THRESHOLD = 0.40
-REPETITION_HIGH_THRESHOLD = 0.60
+REPETITION_HIGH_THRESHOLD = 0.50
 REPETITION_VERY_HIGH_THRESHOLD = 0.70
 REPETITION_CRITICAL_THRESHOLD = 0.80
 REPETITION_CLASSES = ("low", "medium", "high", "very_high", "critical")
@@ -112,23 +112,24 @@ CLASS_NAMES: dict[int, str] = {}
 
 # Description generation
 # Allowed values: "code", "image", "image_code".
-DESCRIPTION_TYPES = ["code", "image", "image_code"]
+DESCRIPTION_TYPES = ["code"]
 DESCRIPTIONS_PER_REPETITION_CLASS = {
-    "low": 10,
+    "low": 30,
     "medium": 10,
-    "high": 10,
-    "very_high": 10,
-    "critical": 10,
+    "high": 1,
+    "very_high": 1,
+    "critical": 1,
 }
 DESCRIPTION_CANDIDATE_FACTOR = 3
 OLLAMA_URL = "http://localhost:11434"
-OLLAMA_TEXT_MODEL = "gemma4:12b"
-OLLAMA_VISION_MODEL = "gemma4:12b"
+OLLAMA_TEXT_MODEL = "qwen3-coder:30b-a3b-q4_K_M"
+OLLAMA_VISION_MODEL = "gemma4:31b"
 OLLAMA_TIMEOUT = 1_800
 OLLAMA_RETRIES = 1
-OLLAMA_PARALLEL_REQUESTS = 2
+OLLAMA_PARALLEL_REQUESTS = 1
 OLLAMA_TEMPERATURE = 0.1
 OLLAMA_NUM_PREDICT = 2048
+OLLAMA_NUM_CTX = 16384
 
 # Parquet and upload
 MAX_PARQUET_BYTES = 134_000_000
@@ -136,7 +137,7 @@ PARQUET_BUFFER_BYTES = 110_000_000
 STAGING_ROWS_PER_FILE = 10_000
 HF_REPO_ID = "loss-boss/tikz-dataset-clean"
 HF_PRIVATE = False
-HF_TOKEN: str | None = "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"  # Authenticate with `hf auth login` or set securely at runtime.
+HF_TOKEN: str | None = "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"  # Authenticate with `hf auth login` or set securely at runtime.
 
 # Execution
 OVERWRITE = True
