@@ -1,0 +1,7 @@
+You receive one rendered TikZ/LaTeX figure as an image.
+
+Write one concise English paragraph describing only what is visibly present in the image. Describe the overall layout, shapes, colors, lines, arrows, axes, plots, markers, legends, labels, annotations, and visible numbers when they can be read reliably.
+
+Do not infer hidden source-code details. Do not invent coordinates, labels, values, relationships, or techniques that are not visibly supported by the image. If exact numeric values are not readable, describe the visual trend or structure without estimating them.
+
+Return only the description paragraph. Do not add headings, bullet points, or code examples.

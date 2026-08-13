@@ -6,10 +6,11 @@ import json
 import shutil
 
 import config
-from first_stage_cleaner import BENCHMARK, DATIKZ, DatasetCleaner
-from enrichment import Enricher
+from cleaning import BENCHMARK, DATIKZ, InputDatasetCleaner
+from components import Renderer
+from enrichment import DatasetEnricher
 from output import FinalExporter, HuggingFaceUploader
-from second_stage_cleaner import DatasetProcessor, Renderer
+from processing import RenderedDatasetProcessor
 
 
 class Pipeline:
@@ -37,19 +38,28 @@ class Pipeline:
         ):
             path.mkdir(parents=True, exist_ok=True)
 
+        if (config.RUN_PREPROCESSING or config.RUN_ENRICHMENT) and not config.TOKENIZER_PATH.exists():
+            raise FileNotFoundError(config.TOKENIZER_PATH)
+
         if config.RUN_PREPROCESSING:
-            if not config.TOKENIZER_PATH.exists():
-                raise FileNotFoundError(config.TOKENIZER_PATH)
             if not config.OVERWRITE and any(config.STAGING_DIR.rglob("*.parquet")):
-                raise FileExistsError("Staging output already exists. Set OVERWRITE=True or disable preprocessing.")
+                raise FileExistsError(
+                    "Staging output already exists. Set OVERWRITE=True or disable preprocessing."
+                )
             Renderer().check_dependencies()
 
-        if config.RUN_ENRICHMENT and config.DESCRIPTIONS_PER_CLASS > 0 and not config.PROMPT_PATH.exists():
-            raise FileNotFoundError(config.PROMPT_PATH)
+        if config.RUN_ENRICHMENT:
+            invalid = set(config.DESCRIPTION_TYPES).difference(config.DESCRIPTION_PROMPTS)
+            if invalid:
+                raise ValueError(f"Unknown DESCRIPTION_TYPES: {sorted(invalid)}")
+            for description_type in config.DESCRIPTION_TYPES:
+                path = config.DESCRIPTION_PROMPTS[description_type]
+                if not path.exists():
+                    raise FileNotFoundError(path)
 
     def preprocess(self) -> None:
-        datasets, cleaning_stats = DatasetCleaner().run() #first stage cleaner (Load, shuffle, filter and deduplicate the two input datasets.)
-        processor = DatasetProcessor() # second stage cleaner (Parallel TikZ rendering, validation and CLIP comparison.)
+        datasets, cleaning_stats = InputDatasetCleaner().run()
+        processor = RenderedDatasetProcessor()
         processing_stats = {
             "datikz": processor.run("datikz", datasets["datikz"], DATIKZ),
             "benchmark": processor.run("benchmark", datasets["benchmark"], BENCHMARK),
@@ -59,7 +69,7 @@ class Pipeline:
         self._save_statistics()
 
     def enrich(self) -> None:
-        self.statistics["enrichment"] = Enricher().run() # add new knowledge to the dataset (Cluster images, create splits and generate selected Ollama descriptions.)
+        self.statistics["enrichment"] = DatasetEnricher().run()
         self._save_statistics()
 
     def export(self) -> None:
@@ -83,7 +93,10 @@ class Pipeline:
 
     def _save_statistics(self) -> None:
         path = config.REPORT_DIR / "statistics.json"
-        path.write_text(json.dumps(self.statistics, indent=2, default=str), encoding="utf-8")
+        path.write_text(
+            json.dumps(self.statistics, indent=2, default=str),
+            encoding="utf-8",
+        )
 
 
 if __name__ == "__main__":

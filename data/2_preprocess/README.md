@@ -1,300 +1,262 @@
 # TikZ preprocessing pipeline
 
-This pipeline prepares **DaTikZ-V4** and **self-collected TikZ data from October 1, 2025 onward** for training and benchmarking.
+This package prepares DaTikZ-V4 and the benchmark dataset, renders valid TikZ samples, computes configurable image embeddings, adds repetition/token metadata, clusters the images, creates selected descriptions, and exports final Parquet shards.
 
-The processing flow is organized into the following stages:
-
-```text
-Load local DaTikZ-V4 and self-collected benchmark Parquet files
-        ↓
-Shuffle each dataset independently
-        ↓
-Filter benchmark samples from October 1, 2025 onward
-        ↓
-Optionally filter benchmark samples by origin
-        ↓
-Remove duplicates within each dataset
-        ↓
-Remove benchmark duplicates from DaTikZ-V4
-        ↓
-Filter TikZ code by token length
-        ↓
-Render TikZ code as 512 × 512 images
-        ↓
-Reject failed, multi-page, invalid, or blank renders
-        ↓
-Compare original and rendered images using image embeddings
-        ↓
-Reduce the shared CLIP embedding space with PCA or UMAP
-        ↓
-Cluster jointly with MiniBatchKMeans or HDBSCAN
-        ↓
-Generate LLM descriptions separately per dataset and class
-        ↓
-Export size-limited Parquet shards
-        ↓
-Create the final `train` and `benchmark` splits
-        ↓
-Optionally upload the dataset to Hugging Face
-```
-
-## Files
-
-* `code/config.py`: all paths and settings
-* `code/pipeline.py`: pipeline execution order
-* `code/first_stage_cleaner.py`: loading, shuffling, date filtering, deduplication, and token filtering
-* `code/second_stage_cleaner.py`: TikZ rendering, validation, image comparison, and CLIP embeddings
-* `code/enrichment.py`: joint clustering and Ollama descriptions
-* `code/output.py`: Parquet export, dataset metadata, and Hugging Face upload
-* `code/tikz_rendering.py`: TikZ rendering implementation
-
-## First-stage cleaning
-
-The first stage loads and cleans the two input datasets before any TikZ code is rendered.
-
-DaTikZ-V4 and the self-collected benchmark dataset are always processed separately.
-
-The first-stage cleaning performs the following operations:
-
-1. Load all local Parquet files belonging to each dataset.
-2. Shuffle DaTikZ-V4 and the benchmark dataset independently.
-3. Filter benchmark samples by the configured date range.
-4. Optionally filter benchmark samples by their `origin`.
-5. Normalize the TikZ code before hashing.
-6. Remove duplicate TikZ code within DaTikZ-V4.
-7. Remove duplicate TikZ code within the benchmark dataset.
-8. Remove DaTikZ-V4 samples whose TikZ code also occurs in the benchmark dataset.
-9. Tokenize the TikZ code with the configured local tokenizer.
-10. Remove samples that exceed the configured maximum token length.
-
-The benchmark dataset has priority during cross-dataset deduplication. If the same TikZ code occurs in both datasets, the benchmark sample is kept and the corresponding DaTikZ-V4 sample is removed.
-
-## Second-stage cleaning
-
-The second stage renders and validates the TikZ code that passed the first cleaning stage.
-
-Each TikZ sample is rendered again using the configured LaTeX engines and rendering settings.
-
-The default target format is:
+## Pipeline
 
 ```text
-Image size: 512 × 512 pixels
-DPI:        400
+Input Parquets
+    ↓
+InputDatasetCleaner
+    ├── shuffle
+    ├── benchmark date/origin filter
+    ├── within/cross-dataset deduplication
+    └── token-length filter
+    ↓
+RenderedDatasetProcessor
+    ├── render + validate
+    ├── CLIP or SigLIP2 embeddings
+    └── original/rendered cosine similarity
+    ↓
+DatasetEnricher
+    ├── local repetition class + token_len
+    ├── PCA or UMAP
+    ├── KMeans or HDBSCAN
+    └── selected Ollama descriptions
+    ↓
+FinalExporter
+    ↓
+train + benchmark Parquet shards
 ```
 
-A sample is rejected if:
-
-* LaTeX compilation fails or there is at least one error
-* the configured rendering timeout is exceeded
-* the PDF contains more than one page
-* the rendered image is blank or nearly blank
-
-The original image is then compared with the newly rendered image using normalized CLIP image embeddings and cosine similarity.
-
-Samples below the configured similarity threshold are stored in a separate analysis directory together with:
-
-* the original image
-* the rendered image
-* the TikZ code
-* the calculated similarity value
-
-A low similarity value is used for dataset analysis. It does not automatically remove the sample.
-
-## Enrichment
-
-The enrichment stage adds cluster labels and LLM-generated descriptions to the cleaned samples.
-
-It performs the following operations:
-
-1. Read the CLIP embeddings from the staging datasets.
-2. Reduce the shared embedding space with the configured reducer (`pca` or `umap`).
-3. Cluster the reduced embeddings with the configured algorithm (`kmeans` or `hdbscan`).
-4. Assign a cluster to every DaTikZ-V4 and benchmark sample.
-5. Convert non-noise cluster IDs into names such as `class_1`, `class_2`, and `class_3`; HDBSCAN noise is named `noise` by default.
-6. Generate a configured number of LLM descriptions per dataset and class.
-7. Assign every DaTikZ-V4 sample to `train`.
-8. Assign every self-collected sample to `benchmark`.
-
-The descriptions are generated separately for each dataset and class.
-
-For example, with six classes and:
-
-```python
-DESCRIPTIONS_PER_CLASS = 10
-```
-
-the pipeline generates up to:
+## Code layout
 
 ```text
-DaTikZ-V4:  6 × 10 = 60
-Benchmark:  6 × 10 = 60
-Total:             = 120
+2_preprocess/
+├── README.md
+├── prompts/
+│   ├── description_code_prompt.txt
+│   ├── description_image_prompt.txt
+│   └── description_image_code_prompt.txt
+└── code/
+    ├── config.py
+    ├── pipeline.py
+    ├── cleaning.py
+    ├── processing.py
+    ├── enrichment.py
+    ├── output.py
+    ├── tikz_rendering.py
+    └── components/
+        ├── __init__.py
+        ├── clip_analyzer.py
+        ├── clusterer.py
+        ├── ollama_client.py
+        ├── renderer.py
+        ├── repetition_classifier.py
+        └── reporter.py
 ```
 
-If one dataset contains fewer than the requested number of samples for a class, all available samples from that class are used.
+The three high-level processing classes are:
 
-The descriptions are generated by the configured Ollama model. The prompt consists of:
+- `InputDatasetCleaner`: source loading, filtering, deduplication and token filtering.
+- `RenderedDatasetProcessor`: rendering, validation, image similarity and image embeddings.
+- `DatasetEnricher`: repetition metadata, clustering and descriptions.
+
+Reusable implementation details live in `code/components/`.
+
+## Image encoder, reducer and clusterer
+
+All three choices are independent:
+
+```python
+IMAGE_ENCODER = "clip"          # "clip" or "siglip2"
+CLUSTER_REDUCER = "umap"       # "pca" or "umap"
+CLUSTER_ALGORITHM = "hdbscan"  # "kmeans" or "hdbscan"
+```
+
+Models:
+
+```python
+CLIP_MODEL = "openai/clip-vit-base-patch32"
+SIGLIP2_MODEL = "google/siglip2-base-patch16-224"
+```
+
+The rendered and original image are encoded by the selected model. Cosine similarity is used only for reporting low-similarity samples; these rows are not automatically removed.
+
+The staging schema stores generic `image_embedding`, `image_similarity`, and `image_encoder` fields. If enrichment is run against staging data created with a different encoder than the current `IMAGE_ENCODER`, the pipeline raises an error instead of silently mixing embeddings.
+
+## Repetition classification
+
+Repetition is measured independently inside each sample. Comments are removed, numbers are normalized to `NUM`, and local 1- to 4-gram repetition coverage is computed.
+
+```python
+REPETITION_NGRAM_ORDERS = (1, 2, 3, 4)
+REPETITION_NGRAM_WEIGHTS = {
+    1: 0.40,
+    2: 0.30,
+    3: 0.20,
+    4: 0.10,
+}
+REPETITION_MIN_REPEAT_COUNT = 2
+```
+
+Five classes are used:
+
+```python
+REPETITION_MEDIUM_THRESHOLD = 0.40
+REPETITION_HIGH_THRESHOLD = 0.60
+REPETITION_VERY_HIGH_THRESHOLD = 0.70
+REPETITION_CRITICAL_THRESHOLD = 0.80
+```
 
 ```text
-Base prompt from the configured prompt file
-        +
-TikZ code of the selected sample
+score < 0.40  -> low
+score < 0.60  -> medium
+score < 0.70  -> high
+score < 0.80  -> very_high
+otherwise     -> critical
 ```
 
-Samples that are not selected for description generation receive an empty or null `llm_description`.
+`token_len` is computed separately with `TOKENIZER_PATH` and `add_special_tokens=True`, matching the first-stage token filter.
 
-No validation split is created during preprocessing. A validation split can be selected later from `train` using the generated class labels to obtain a uniform class distribution.
+## Description types
 
-## Joint clustering
-
-CLIP image embeddings from DaTikZ-V4 and benchmark are clustered jointly. The samples remain in their original datasets; only the shared embedding space is used for fitting.
-
-The default configuration uses the best-performing analysis setup:
+Three description types are supported:
 
 ```python
-CLUSTER_REDUCER = "umap"
-CLUSTER_ALGORITHM = "hdbscan"
-UMAP_COMPONENTS = 20
+DESCRIPTION_TYPES = [
+    "code",
+    "image",
+    "image_code",
+]
 ```
 
-Both choices remain configurable:
+Remove an entry to disable that description type. Examples:
 
 ```python
-CLUSTER_REDUCER = "pca"       # "pca" or "umap"
-CLUSTER_ALGORITHM = "hdbscan" # "kmeans" or "hdbscan"
+DESCRIPTION_TYPES = ["code"]
 ```
 
-This allows all four combinations:
-
-```text
-PCA  -> KMeans
-PCA  -> HDBSCAN
-UMAP -> KMeans
-UMAP -> HDBSCAN
-```
-
-### PCA settings
+or:
 
 ```python
-PCA_COMPONENTS = 20
+DESCRIPTION_TYPES = ["image", "image_code"]
 ```
 
-PCA uses incremental fitting, so `PCA -> KMeans` can continue to process embeddings in batches.
+The types map to these final columns:
 
-### UMAP settings
+| Type | Input | Column |
+|---|---|---|
+| `code` | reference code | `llm_description` |
+| `image` | rendered image | `llm_description_image` |
+| `image_code` | rendered image + reference code | `llm_description_image_code` |
+
+`llm_description` keeps the old column name for backward compatibility.
+
+Code-only descriptions use the text model. Image-based descriptions require a vision-capable Ollama model:
 
 ```python
-UMAP_COMPONENTS = 20
-UMAP_N_NEIGHBORS = 30
-UMAP_MIN_DIST = 0.0
-UMAP_METRIC = "cosine"
+OLLAMA_TEXT_MODEL = "qwen3-coder:30b-a3b-q4_K_M"
+OLLAMA_VISION_MODEL = "qwen3-vl:30b"
 ```
 
-UMAP requires `umap-learn`:
+The REST API sends rendered PNG bytes as base64 image input for `image` and `image_code`.
+
+### Parallel Ollama requests
+
+The preprocessing client can send several independent description requests concurrently:
+
+```python
+OLLAMA_PARALLEL_REQUESTS = 2
+```
+
+This is a global limit across all enabled description types and all sampling groups.
+If a request fails, the next candidate from the same dataset/image-class/repetition-class/description-type group is used as fallback.
+
+The Ollama server must also allow parallel inference. For two parallel requests, start/configure it with for example:
 
 ```bash
-pip install umap-learn
+OLLAMA_NUM_PARALLEL=2 ollama serve
 ```
 
-Unlike the incremental PCA path, UMAP needs the joint embedding matrix in memory while it is fitted. For very large staging datasets this can require substantially more RAM.
+If the server only permits one parallel request, the Python workers can still submit concurrently but Ollama will queue them. Start with `2` and increase only if GPU/RAM usage and throughput improve.
 
-### KMeans settings
+### Description sampling
+
+Sampling remains separate for every:
+
+```text
+dataset × image class × repetition class
+```
+
+The target count is configured per repetition class:
 
 ```python
-N_CLUSTERS = 6
+DESCRIPTIONS_PER_REPETITION_CLASS = {
+    "low": 10,
+    "medium": 10,
+    "high": 10,
+    "very_high": 10,
+    "critical": 10,
+}
 ```
 
-`N_CLUSTERS` is used only when `CLUSTER_ALGORITHM = "kmeans"`.
+Each enabled description type attempts to reach that target independently within the same group. A failure in one description type does not discard successfully generated descriptions of another type.
 
-### HDBSCAN settings
+## Prompt files
+
+```text
+prompts/description_code_prompt.txt
+prompts/description_image_prompt.txt
+prompts/description_image_code_prompt.txt
+```
+
+The image-only prompt asks the model to describe only visible content and not infer hidden source-code details. The combined prompt uses the rendered image as the visual source and the reference code for exact labels, values, coordinates and techniques.
+
+## Final columns
+
+```text
+input_image
+reference_image
+reference_code
+llm_description
+llm_description_image
+llm_description_image_code
+type
+source
+class
+repetition_class
+token_len
+```
+
+## Re-running stages
+
+Full pipeline:
 
 ```python
-HDBSCAN_MIN_CLUSTER_SIZE = 200
-HDBSCAN_MIN_SAMPLES = 20
-HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
-HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
-HDBSCAN_METRIC = "euclidean"
-HDBSCAN_NOISE_CLASS = "noise"
+RUN_PREPROCESSING = True
+RUN_ENRICHMENT = True
+RUN_EXPORT = True
+RUN_UPLOAD = False
 ```
 
-HDBSCAN determines the number of clusters automatically. Samples assigned label `-1` are kept and written with the configured noise class name.
-
-The fitted reducer and clusterer are stored under `METADATA_DIR / "models"`.
-
-### Re-running only clustering and descriptions
-
-Existing rendered staging data can be reused. To recompute only classes and descriptions without rendering again, use for example:
+Re-run enrichment/export using compatible existing staging data:
 
 ```python
 OVERWRITE = True
 RUN_PREPROCESSING = False
 RUN_ENRICHMENT = True
-RUN_EXPORT = False
+RUN_EXPORT = True
 RUN_UPLOAD = False
 ```
 
-With preprocessing disabled, `OVERWRITE=True` no longer deletes `STAGING_DIR`; it only replaces outputs belonging to the enabled later stages.
-
-## Hugging Face upload
-
-The final samples are exported as size-limited Parquet shards.
-
-The pipeline writes two dataset splits:
-
-```text
-train
-benchmark
-```
-
-DaTikZ-V4 is exported as `train`, while the self-collected TikZ data is exported as `benchmark`.
-
-The Parquet writer checks the actual file size and splits large outputs into multiple files. The configured maximum shard size prevents individual Parquet files from becoming too large.
-
-The exported files follow a structure similar to:
-
-```text
-data/
-├── train-00000.parquet
-├── train-00001.parquet
-├── benchmark-00000.parquet
-└── benchmark-00001.parquet
-```
-
-The generated Hugging Face dataset metadata declares `input_image` and `reference_image` as image features. This allows the Hugging Face Dataset Viewer to display image previews instead of showing only the underlying `bytes` and `path` dictionary.
-
-Uploading is optional and controlled in `code/config.py`.
-
-## Final columns
-
-The exported Parquet files contain:
-
-* `input_image`
-* `reference_image`
-* `reference_code`
-* `llm_description`
-* `type`
-* `source`
-* `class`
-
-The columns contain the following information:
-
-| Column            | Description                                    |
-| ----------------- | ---------------------------------------------- |
-| `input_image`     | Newly rendered TikZ image                      |
-| `reference_image` | Newly rendered reference image                 |
-| `reference_code`  | Cleaned TikZ code                              |
-| `llm_description` | Optional description generated through Ollama  |
-| `type`            | Sample type, currently set to `normal`         |
-| `source`          | Original source, such as `arxiv` or `tikz.net` |
-| `class`           | Cluster label such as `class_1` or `class_2`   |
+If `IMAGE_ENCODER` is changed, preprocessing must be run again because the staging embeddings depend on the selected encoder.
 
 ## Run
 
-Edit the paths and settings in `code/config.py`.
-
-Then run the pipeline from the code directory:
-
 ```bash
-cd code
+cd 2_preprocess/code
 python pipeline.py
 ```
+
+Authenticate to Hugging Face separately with `hf auth login` when upload is enabled. Do not commit access tokens in `config.py`.

@@ -1,0 +1,24 @@
+You receive both a rendered TikZ/LaTeX figure and its complete LaTeX/TikZ/PGFPlots source code.
+
+Write one concise English paragraph describing the rendered figure. Use the image as the primary source for what is visually present and use the source code to resolve exact labels, coordinates, data values, colors, styles, and relationships when they are explicitly defined.
+
+If the source contains explicit plot coordinates or table values, associate them accurately with the corresponding visible series, line, marker, or plot. For a small number of points, include all points in order. For large datasets, include the most informative points such as first, last, minima, maxima, turning points, outliers, or highlighted values and summarize the remaining range.
+
+Do not invent visual elements or values that are unsupported by both inputs. Do not estimate exact values from the image when the source does not provide them.
+
+Then provide one or two short, human-written LaTeX/TikZ examples demonstrating the most important techniques actually used in the figure. Keep the examples minimal and reusable.
+
+Use exactly this format:
+
+Description:
+<one concise paragraph>
+
+Key code examples:
+
+```latex
+<first short example>
+```
+
+```latex
+<optional second short example>
+```

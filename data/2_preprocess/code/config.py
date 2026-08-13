@@ -1,4 +1,4 @@
-"""Edit this file to configure the complete pipeline."""
+"""Central configuration for the complete preprocessing pipeline."""
 
 from __future__ import annotations
 
@@ -13,7 +13,13 @@ DATIKZ_DIR = Path("/home/jonas/Datasets/TikZ/DatikZ-v4-raw-test")
 BENCHMARK_DIR = Path("/home/jonas/Datasets/TikZ/benchmark-raw-test")
 OUTPUT_DIR = Path("../../preprocessed")
 TOKENIZER_PATH = Path("/home/jonas/models/gemma-4-31B-it-unsloth-bnb-4bit")
-PROMPT_PATH = Path("../prompts/description_prompt.txt")
+PROMPT_DIR = ROOT.parent / "prompts"
+
+DESCRIPTION_PROMPTS = {
+    "code": PROMPT_DIR / "description_code_prompt.txt",
+    "image": PROMPT_DIR / "description_image_prompt.txt",
+    "image_code": PROMPT_DIR / "description_image_code_prompt.txt",
+}
 
 STAGING_DIR = OUTPUT_DIR / "staging"
 METADATA_DIR = OUTPUT_DIR / "metadata"
@@ -46,37 +52,54 @@ SEED = 42
 MAX_TOKENS = 4096
 TOKEN_BATCH_SIZE = 64
 
-# Rendering and CLIP
+# Rendering
 IMAGE_SIZE = 512
 DPI = 400
 LATEX_TIMEOUT = 45
 LATEX_BIN_DIR: Path | None = Path("/usr/local/texlive/2026/bin/x86_64-linux")
 LATEX_ENGINES = ("pdflatex", "lualatex", "xelatex")
 RENDER_WORKERS = max(1, min(8, os.cpu_count() or 1))
-CLIP_MODEL = "openai/clip-vit-base-patch32"
-CLIP_DEVICE = "auto"
-CLIP_BATCH_SIZE = 64
-CLIP_THRESHOLD = 0.85
 MIN_INK_FRACTION = 0.002
 
-# Clustering and descriptions
-# The reducer and clusterer are fitted jointly on these staging datasets.
-# Recommended setup from the analysis notebook: CLIP -> UMAP(20) -> HDBSCAN.
-CLUSTER_DATASETS = ("datikz", "benchmark")
-CLUSTER_REDUCER = "umap"       # "pca" or "umap"
-CLUSTER_ALGORITHM = "hdbscan"  # "kmeans" or "hdbscan"
+# Image encoder / similarity
+IMAGE_ENCODER = "siglip2"  # "clip" or "siglip2"
+CLIP_MODEL = "openai/clip-vit-base-patch32"
+SIGLIP2_MODEL = "google/siglip2-base-patch16-224"
+IMAGE_DEVICE = "auto"
+IMAGE_BATCH_SIZE = 64
+IMAGE_SIMILARITY_THRESHOLDS = {
+    "clip": 0.85,
+    "siglip2": 0.85,
+}
 
-# Dimensionality reduction
+# Enrichment
+CLUSTER_DATASETS = ("datikz", "benchmark")
+
+# Local repetition classification
+REPETITION_NGRAM_ORDERS = (1, 2, 3, 4)
+REPETITION_NGRAM_WEIGHTS = {
+    1: 0.40,
+    2: 0.30,
+    3: 0.20,
+    4: 0.10,
+}
+REPETITION_MIN_REPEAT_COUNT = 2
+REPETITION_MEDIUM_THRESHOLD = 0.40
+REPETITION_HIGH_THRESHOLD = 0.60
+REPETITION_VERY_HIGH_THRESHOLD = 0.70
+REPETITION_CRITICAL_THRESHOLD = 0.80
+REPETITION_CLASSES = ("low", "medium", "high", "very_high", "critical")
+REPETITION_BATCH_SIZE = 256
+
+# Image clustering
+CLUSTER_REDUCER = "pca"       # "pca" or "umap"
+CLUSTER_ALGORITHM = "hdbscan"  # "kmeans" or "hdbscan"
 PCA_COMPONENTS = 20
 UMAP_COMPONENTS = 20
 UMAP_N_NEIGHBORS = 30
 UMAP_MIN_DIST = 0.0
 UMAP_METRIC = "cosine"
-
-# KMeans (used only when CLUSTER_ALGORITHM == "kmeans")
-N_CLUSTERS = 6
-
-# HDBSCAN (used only when CLUSTER_ALGORITHM == "hdbscan")
+N_CLUSTERS = 6 #only for kmeans
 HDBSCAN_MIN_CLUSTER_SIZE = 200
 HDBSCAN_MIN_SAMPLES = 20
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
@@ -84,16 +107,28 @@ HDBSCAN_CLUSTER_SELECTION_EPSILON = 0.0
 HDBSCAN_METRIC = "euclidean"
 HDBSCAN_N_JOBS = -1
 HDBSCAN_NOISE_CLASS = "noise"
-
 CLUSTER_BATCH_SIZE = 4_096
 CLASS_NAMES: dict[int, str] = {}
-DESCRIPTIONS_PER_CLASS = 10
+
+# Description generation
+# Allowed values: "code", "image", "image_code".
+DESCRIPTION_TYPES = ["code", "image", "image_code"]
+DESCRIPTIONS_PER_REPETITION_CLASS = {
+    "low": 10,
+    "medium": 10,
+    "high": 10,
+    "very_high": 10,
+    "critical": 10,
+}
 DESCRIPTION_CANDIDATE_FACTOR = 3
 OLLAMA_URL = "http://localhost:11434"
-OLLAMA_MODEL = "qwen3-coder:30b-a3b-q4_K_M"
+OLLAMA_TEXT_MODEL = "gemma4:12b"
+OLLAMA_VISION_MODEL = "gemma4:12b"
 OLLAMA_TIMEOUT = 1_800
 OLLAMA_RETRIES = 1
-OLLAMA_WORKERS = 1
+OLLAMA_PARALLEL_REQUESTS = 2
+OLLAMA_TEMPERATURE = 0.1
+OLLAMA_NUM_PREDICT = 2048
 
 # Parquet and upload
 MAX_PARQUET_BYTES = 134_000_000
@@ -101,7 +136,7 @@ PARQUET_BUFFER_BYTES = 110_000_000
 STAGING_ROWS_PER_FILE = 10_000
 HF_REPO_ID = "loss-boss/tikz-dataset-clean"
 HF_PRIVATE = False
-HF_TOKEN: str | None = "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"  # Uses the token from `hf auth login` when available.
+HF_TOKEN: str | None = "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"  # Authenticate with `hf auth login` or set securely at runtime.
 
 # Execution
 OVERWRITE = True

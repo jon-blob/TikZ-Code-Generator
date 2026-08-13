@@ -10,7 +10,7 @@ MODELS_DIR = Path("/home/jonas/models")
 PROMPTFOO_DIR = ROOT.parent.parent / "evaluation" / "promptfoo"
 LATEX_DIR = ROOT / "latex"
 INSTRUCTION_FILE = ROOT / "prompts" / "instruction.txt"
-USE_LLM_DESCRIPTION=False
+USE_LLM_DESCRIPTION=True
 
 def configure_runtime() -> None:
     """Expose the local Promptfoo utilities and local TeX Live installation."""
@@ -44,29 +44,49 @@ class SFTConfig:
 
     max_seq_length: int = 16384
     image_resize: str | int = "min"
-    lora_rank: int = 32
-    lora_alpha: int = 32
+    lora_rank: int = 8
+    lora_alpha: int = 8
+    lora_dropout: float = 0.3
+    weight_decay: float = 0.2
     seed: int = 3407
     num_examples_train: int | None = None
     num_examples_val: int | None = 80
 
-    learning_rate: float = 3e-5
+    learning_rate: float = 1e-6
     epochs: float = 1.0
-    max_steps: int = -1
-    save_steps: int = 25
-    eval_steps: int = 25
+    max_steps: int = 5000
+    save_steps: int = 50
+    eval_steps: int = 50
     logging_steps: int = 1
     warmup_steps: int = 10
     batch_size: int = 1
-    gradient_accumulation_steps: int = 1
+    gradient_accumulation_steps: int = 32
     resume_from_checkpoint: bool = False
 
+    # Endless-generation debugging
+    debug_eval_at_step0: bool = True
+    debug_max_new_tokens: int = 1024
+    debug_label_audit_samples: int = 100
+    debug_teacher_probe_eval_index: int = 0
+    debug_train_sample_logging: bool = True
+
     image_paths_for_callback = [
-            f"{DATA_DIR}/val/reference_image/class_1_00000001.png",
-            f"{DATA_DIR}/val/reference_image/class_2_00000001.png",
-            f"{DATA_DIR}/val/reference_image/class_3_00000001.png",
-            f"{DATA_DIR}/val/reference_image/class_4_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_1_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_2_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_3_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_4_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_5_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_6_00000001.png",
         ]
+
+    descripion_paths_for_callback = [
+                None,
+                f"{DATA_DIR}/train/llm_description/class_2_00000001.txt",
+                f"{DATA_DIR}/train/llm_description/class_3_00000001.txt",
+                f"{DATA_DIR}/train/llm_description/class_4_00000001.txt",
+                f"{DATA_DIR}/train/llm_description/class_5_00000001.txt",
+                None,
+    ]
 
 
 

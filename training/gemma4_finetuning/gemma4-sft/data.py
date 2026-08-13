@@ -12,12 +12,14 @@ from common.data_utils import (
     render_instruction,
     resolve,
 )
+from debug_tools import code_structure_stats
 
 
 class DaTikZDataset(Dataset):
     def __init__(self, cfg, manifest_name: str, split: str) -> None:
         self.cfg = cfg
         self.root = cfg.dataset_path
+        self.split = split
         self.template = load_instruction(cfg.instruction_path)
         limit = cfg.num_examples_train if split == "train" else cfg.num_examples_val
         required = {cfg.image_column, cfg.code_column, cfg.vlm_description_column}
@@ -37,6 +39,14 @@ class DaTikZDataset(Dataset):
         description = read_optional_text(description_path, "VLM description")
         instruction = render_instruction(self.template, description, self.cfg.use_llm_description)
 
+        debug_meta = {
+            "split": self.split,
+            "dataset_index": int(index),
+            "image_path": str(image_path),
+            "code_path": str(code_path),
+            **code_structure_stats(code),
+        }
+
         return {
             "prompt": [{
                 "role": "user",
@@ -49,4 +59,5 @@ class DaTikZDataset(Dataset):
                 "role": "assistant",
                 "content": [{"type": "text", "text": code}],
             }],
+            "_debug_meta": debug_meta,
         }

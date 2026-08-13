@@ -20,8 +20,9 @@ STAGING_SCHEMA = pa.schema([
     ("reference_code", pa.string()),
     ("source", pa.string()),
     ("rendered_image", pa.binary()),
-    ("clip_similarity", pa.float32()),
-    ("clip_embedding", pa.list_(pa.float32())),
+    ("image_encoder", pa.string()),
+    ("image_similarity", pa.float32()),
+    ("image_embedding", pa.list_(pa.float32())),
 ])
 
 IMAGE = pa.struct([("bytes", pa.binary()), ("path", pa.string())])
@@ -30,9 +31,13 @@ FINAL_SCHEMA = pa.schema([
     ("reference_image", IMAGE),
     ("reference_code", pa.string()),
     ("llm_description", pa.string()),
+    ("llm_description_image", pa.string()),
+    ("llm_description_image_code", pa.string()),
     ("type", pa.string()),
     ("source", pa.string()),
     ("class", pa.string()),
+    ("repetition_class", pa.string()),
+    ("token_len", pa.int32()),
 ])
 
 
@@ -106,7 +111,7 @@ class StagingWriter:
         estimated = (
             len(row["rendered_image"])
             + len(row["reference_code"].encode("utf-8"))
-            + 4 * len(row["clip_embedding"])
+            + 4 * len(row["image_embedding"])
             + 512
         )
         self.writer.add(row, estimated)
@@ -161,12 +166,33 @@ class FinalExporter:
 
         metadata_table = pq.read_table(metadata_path)
         metadata = {
-            sample_id: (split, class_name, description)
-            for sample_id, split, class_name, description in zip(
+            sample_id: (
+                split,
+                class_name,
+                repetition_class,
+                token_len,
+                description_code,
+                description_image,
+                description_image_code,
+            )
+            for (
+                sample_id,
+                split,
+                class_name,
+                repetition_class,
+                token_len,
+                description_code,
+                description_image,
+                description_image_code,
+            ) in zip(
                 metadata_table["sample_id"].to_pylist(),
                 metadata_table["split"].to_pylist(),
                 metadata_table["class"].to_pylist(),
+                metadata_table["repetition_class"].to_pylist(),
+                metadata_table["token_len"].to_pylist(),
                 metadata_table["llm_description"].to_pylist(),
+                metadata_table["llm_description_image"].to_pylist(),
+                metadata_table["llm_description_image_code"].to_pylist(),
             )
         }
 
@@ -178,18 +204,43 @@ class FinalExporter:
 
         for dataset_name in ("datikz", "benchmark"):
             for row in iter_rows(dataset_name, ["sample_id", "reference_code", "source", "rendered_image"]):
-                split, class_name, description = metadata[row["sample_id"]]
+                (
+                    split,
+                    class_name,
+                    repetition_class,
+                    token_len,
+                    description_code,
+                    description_image,
+                    description_image_code,
+                ) = metadata[row["sample_id"]]
                 image = {"bytes": row["rendered_image"], "path": None}
                 final_row = {
                     "input_image": image,
                     "reference_image": image,
                     "reference_code": row["reference_code"],
-                    "llm_description": description,
+                    "llm_description": description_code,
+                    "llm_description_image": description_image,
+                    "llm_description_image_code": description_image_code,
                     "type": "normal",
                     "source": row["source"],
                     "class": class_name,
+                    "repetition_class": repetition_class,
+                    "token_len": token_len,
                 }
-                estimate = 2 * len(row["rendered_image"]) + len(row["reference_code"].encode()) + 512
+                description_bytes = sum(
+                    len((value or "").encode("utf-8"))
+                    for value in (
+                        description_code,
+                        description_image,
+                        description_image_code,
+                    )
+                )
+                estimate = (
+                    2 * len(row["rendered_image"])
+                    + len(row["reference_code"].encode("utf-8"))
+                    + description_bytes
+                    + 512
+                )
                 writers[split].add(final_row, estimate)
 
         result = {split: writer.close() for split, writer in writers.items()}
@@ -211,12 +262,20 @@ dataset_info:
     dtype: string
   - name: llm_description
     dtype: string
+  - name: llm_description_image
+    dtype: string
+  - name: llm_description_image_code
+    dtype: string
   - name: type
     dtype: string
   - name: source
     dtype: string
   - name: class
     dtype: string
+  - name: repetition_class
+    dtype: string
+  - name: token_len
+    dtype: int32
 configs:
 - config_name: default
   data_files:

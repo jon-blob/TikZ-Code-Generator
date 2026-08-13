@@ -15,9 +15,10 @@ def load_model(cfg):
         finetune_vision_layers=False, #normal run was without vision layers
         finetune_language_layers=True,
         finetune_attention_modules=True,
-        finetune_mlp_modules=False,
+        finetune_mlp_modules=True,
         r=cfg.lora_rank,
         lora_alpha=cfg.lora_alpha,
         random_state=cfg.seed,
+        lora_dropout=cfg.lora_dropout,
     )
     return model, processor

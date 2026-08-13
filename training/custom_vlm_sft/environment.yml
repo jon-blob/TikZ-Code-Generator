@@ -1,0 +1,19 @@
+name: tikz-vlm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - setuptools==80.10.2
+  - numpy>=2.0
+  - pandas>=2.2
+  - pillow>=11
+  - tensorboard>=2.19
+  - poppler
+  - pip:
+      - torch==2.13.0
+      - torchvision==0.28.0
+      - transformers==5.15.0
+      - peft==0.19.0
+      - accelerate==1.14.0
+      - tqdm>=4.67
