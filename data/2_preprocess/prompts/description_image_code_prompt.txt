@@ -8,17 +8,19 @@ Do not invent visual elements or values that are unsupported by both inputs. Do 
 
 Then provide one or two short, human-written LaTeX/TikZ examples demonstrating the most important techniques actually used in the figure. Keep the examples minimal and reusable.
 
+If you provide key code examples then also provide one or two sentences about what the examples does.
+
 Use exactly this format:
 
 Description:
 <one concise paragraph>
 
-Key code examples:
-
+<Explanation of key code example 1>
 ```latex
 <first short example>
 ```
 
+<Explanation of key code example 2>
 ```latex
 <optional second short example>
 ```

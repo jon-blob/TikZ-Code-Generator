@@ -23,6 +23,8 @@ Use only techniques that are actually present, such as:
 
 Keep the examples minimal and natural, as if written by a person for a short tutorial. Do not include packages, document boilerplate, large data tables, or unnecessary options.
 
+If you provide key code examples then also provide one or two sentences about what the examples does.
+
 Do not invent visual elements, labels, values, relationships, or coordinates that are not supported by the source code.
 
 Use exactly this format:
@@ -32,10 +34,12 @@ Description:
 
 Key code examples:
 
+<Explanation of key code example 1>
 ```latex
 <first short example>
 ```
 
+<Explanation of key code example 2>
 ```latex
 <optional second short example>
 ```
