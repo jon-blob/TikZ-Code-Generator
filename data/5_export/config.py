@@ -57,7 +57,7 @@ class Config:
 
 CONFIG = Config(
     input_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean/data"),
-    output_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean"),
+    output_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean/exported-data"),
 
     benchmark_samples_per_class=5,
     benchmark_noise_samples=25,

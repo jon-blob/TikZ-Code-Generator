@@ -125,6 +125,8 @@ class TikZReward:
         answer=None,
         image=None,
         images=None,
+        reference_image=None,
+        reference_images=None,
         **kwargs,
     ) -> list[float]:
         scores: list[float] = []
@@ -134,12 +136,19 @@ class TikZReward:
         input_images = first_present(
             image, images, kwargs.get("image"), kwargs.get("images")
         )
+        target_images = first_present(
+            reference_image,
+            reference_images,
+            kwargs.get("reference_image"),
+            kwargs.get("reference_images"),
+        )
         reference_codes = first_present(answer, kwargs.get("answer"))
 
         for idx, completion in enumerate(completions):
             generated_code = clean_code(completion)
             reference_code = pick(reference_codes, idx)
             input_image = pick(input_images, idx)
+            reference_image_for_reward = pick(target_images, idx)
             record = self._empty_record()
 
             render = is_renderable(generated_code)
@@ -161,11 +170,11 @@ class TikZReward:
                 record["diagnostic_score"] = float(diagnostic.score)
 
                 visual_score = 0.0
-                if input_image is not None and render.image is not None:
+                if reference_image_for_reward is not None and render.image is not None:
                     try:
                         visual = visual_reward_func(
                             cfg=self.cfg,
-                            input_image=input_image,
+                            input_image=reference_image_for_reward,
                             rendered_image=render.image,
                         )
                         visual_score = float(visual.score)
@@ -211,6 +220,7 @@ class TikZReward:
                 examples.append(
                     {
                         "input_image": input_image,
+                        "reference_image": reference_image_for_reward,
                         "rendered_image": render.image,
                         "generated_code": generated_code,
                         "reference_code": reference_code,

@@ -93,3 +93,17 @@ python export_gguf.py
 ## Configuration
 
 Adjust all training parameters, including batch sizes, sequence lengths, training steps, and reward weights, directly in `config.py`.
+
+
+## RL dataset format
+
+The RL pipeline expects the current export manifest columns:
+
+```text
+input_image       -> image shown to the model
+reference_image   -> target image used only by the visual reward
+reference_code    -> target code used by the code reward
+llm_description   -> optional additional prompt description
+```
+
+The default RL manifest is `train/manifest.csv`, and the CrystalBLEU corpus is read from `train/crystalbleu/` relative to the exported dataset root configured by `DATA_DIR`.

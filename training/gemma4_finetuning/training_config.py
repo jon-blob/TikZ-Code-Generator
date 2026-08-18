@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = Path("/home/jonas/PycharmProjects/TikZ-Code-Generator/data/tikz-dataset-clean/dataset-exported/train")
+DATA_DIR = Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean/dataset-exported/train")
 MODELS_DIR = Path("/home/jonas/models")
 PROMPTFOO_DIR = ROOT.parent.parent / "evaluation" / "promptfoo"
 LATEX_DIR = ROOT / "latex"
@@ -92,18 +92,19 @@ class SFTConfig:
 
 @dataclass(slots=True)
 class GRPOConfigData:
-    model_name: str = str(MODELS_DIR / "sft/checkpoints-normal" / "checkpoint-1100")
+    model_name: str = str(MODELS_DIR / "sft" / "checkpoints" / "checkpoint-100")
     load_in_4bit: bool = True
     enable_thinking: bool = False
     gradient_checkpointing: bool = False
     use_llm_description: bool = USE_LLM_DESCRIPTION
 
     dataset_path: Path = DATA_DIR
-    manifest: str = "manifest_val.csv"
+    manifest: str = "train/manifest.csv"
     instruction_path: Path = INSTRUCTION_FILE
-    image_column: str = "image_path"
-    code_column: str = "code_path"
-    vlm_description_column: str = "vlm_description_path"
+    input_image_column: str = "input_image"
+    reference_image_column: str = "reference_image"
+    code_column: str = "reference_code"
+    vlm_description_column: str = "llm_description"
 
     output_dir: Path = MODELS_DIR / "grpo" / "checkpoints"
     lora_output_dir: Path = MODELS_DIR / "grpo" / "lora"
@@ -133,7 +134,7 @@ class GRPOConfigData:
     log_examples_every: int = 1
     log_examples_max: int = 2
     max_logged_code_chars: int = 20000
-    crystalbleu_corpus_dir: Path = DATA_DIR / "crystalbleu-corpus"
+    crystalbleu_corpus_dir: Path = DATA_DIR / "crystalbleu"
     crystalbleu_k: int = 500
     crystalbleu_n: int = 4
     crystalbleu_use_cache: bool = True

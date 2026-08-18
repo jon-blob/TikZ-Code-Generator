@@ -199,3 +199,35 @@ benchmark_noise_samples = 25
 
 If 23 real benchmark image classes are active, the regular target is `23 * 5 = 115` rows.
 The exporter then adds 25 explicit random eligible `noise` rows. Any noise rows needed to fill shortages of real benchmark classes are additional fallback rows and do not reduce the explicit 25-row noise quota. Train keeps its existing importance-weighted sampling and noise fallback unchanged.
+
+## Separate RL export
+
+Run:
+
+```bash
+python export_rl.py
+```
+
+The RL export reuses the SFT train settings (`train_size`, image-class importance,
+description mix, noise fallback, seed/batch settings), but enforces this repetition
+composition for the RL train split:
+
+- 25% `low`
+- 75% from the combined `high` + `critical` pool
+
+The result is written to:
+
+```text
+dataset-exported/rl/
+├── train/
+│   ├── input_image/
+│   ├── reference_image/
+│   ├── llm_description/
+│   ├── reference_code/
+│   └── manifest.csv
+└── crystalbleu/
+```
+
+`high` and `critical` are treated as one joint 75% pool; their internal ratio is
+not fixed. CrystalBLEU is selected after RL train from the full remaining train
+dataset and can use every repetition class.
