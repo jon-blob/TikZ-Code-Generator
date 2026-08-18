@@ -40,7 +40,7 @@ def _print_train_distribution(samples, noise_class: str) -> None:
 
 def run_train(config: Config) -> None:
     files = find_files(config.input_dir, "train")
-    samples = scan(files, config.description_mix)
+    samples = scan(files, config.train_description_mix)
     rng = random.Random(config.seed)
 
     eligible = repetition_candidates(
@@ -95,16 +95,16 @@ def run_train(config: Config) -> None:
         )
 
     # CrystalBLEU is built only from the remainder after validation + train.
-    # It is deliberately NOT importance-weighted. Real non-noise classes are
-    # sampled as uniformly as availability allows, preferring rows without
-    # descriptions. Noise is used only for any final shortfall.
+    # It deliberately ignores the train repetition filter: all repetition
+    # classes (including very_high and critical) and all observed image classes
+    # are eligible. It is not importance-weighted.
     after_train = without(train_candidates, train_keys)
     crystal_keys = choose_uniform_with_noise_fallback(
         samples=after_train,
         total=config.train_crystalbleu_size,
         prefer_described=False,
         rng=rng,
-        valid_repetition_classes=config.valid_repetition_classes,
+        valid_repetition_classes=None,
         noise_class=config.noise_class,
         label="CrystalBLEU",
     )
@@ -123,7 +123,7 @@ def run_train(config: Config) -> None:
         samples=val_samples,
         output=output / "val",
         batch_size=config.batch_size,
-        description_mix=config.description_mix,
+        description_mix=config.train_description_mix,
         seed=config.seed + 101,
     )
     export_crystalbleu(
@@ -137,7 +137,7 @@ def run_train(config: Config) -> None:
         samples=train_samples,
         output=output / "train",
         batch_size=config.batch_size,
-        description_mix=config.description_mix,
+        description_mix=config.train_description_mix,
         seed=config.seed + 202,
     )
 

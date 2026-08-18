@@ -10,7 +10,6 @@ from helpers import (
     export_crystalbleu,
     export_split,
     find_files,
-    is_noise,
     prepare_output,
     repetition_candidates,
     scan,
@@ -19,7 +18,7 @@ from helpers import (
 
 def run_benchmark(config: Config) -> None:
     files = find_files(config.input_dir, "benchmark")
-    samples = scan(files, config.description_mix)
+    samples = scan(files, config.benchmark_description_mix)
     rng = random.Random(config.seed)
 
     eligible = repetition_candidates(
@@ -36,6 +35,7 @@ def run_benchmark(config: Config) -> None:
         samples=samples,
         class_names=class_names,
         count_per_class=config.benchmark_samples_per_class,
+        noise_samples=config.benchmark_noise_samples,
         prefer_described=True,
         rng=rng,
         valid_repetition_classes=config.valid_repetition_classes,
@@ -44,17 +44,14 @@ def run_benchmark(config: Config) -> None:
 
     selected = [sample for sample in samples if sample.key in selected_keys]
 
-    allowed = {name.casefold() for name in class_names}
+    # Benchmark CrystalBLEU uses the complete remaining benchmark dataset.
+    # It is independent from benchmark_classes and from valid_repetition_classes,
+    # so very_high/critical and image classes not selected for the benchmark
+    # subset are retained as metric references.
     crystalbleu = [
         sample
-        for sample in eligible
-        if (
-            sample.key not in selected_keys
-            and (
-                is_noise(sample, config.noise_class)
-                or sample.class_name.casefold() in allowed
-            )
-        )
+        for sample in samples
+        if sample.key not in selected_keys
     ]
 
     output = config.output_dir / "benchmark"
@@ -65,7 +62,7 @@ def run_benchmark(config: Config) -> None:
         samples=selected,
         output=output,
         batch_size=config.batch_size,
-        description_mix=config.description_mix,
+        description_mix=config.benchmark_description_mix,
         seed=config.seed + 303,
     )
     export_crystalbleu(

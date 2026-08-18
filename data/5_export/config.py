@@ -23,6 +23,7 @@ class Config:
     output_dir: Path
 
     benchmark_samples_per_class: int = 20
+    benchmark_noise_samples: int = 0
     val_samples_per_class: int = 20
     train_crystalbleu_size: int = 50_000
     train_size: int | None = None
@@ -45,8 +46,11 @@ class Config:
     # None = all observed non-noise benchmark classes.
     benchmark_classes: Sequence[str] | None = None
 
-    # Relative weights for the final exported description text.
-    description_mix: Mapping[str, float] = field(
+    # Description selection is independent for train/validation and benchmark.
+    train_description_mix: Mapping[str, float] = field(
+        default_factory=lambda: {"llm_description": 1.0}
+    )
+    benchmark_description_mix: Mapping[str, float] = field(
         default_factory=lambda: {"llm_description": 1.0}
     )
 
@@ -55,10 +59,11 @@ CONFIG = Config(
     input_dir=Path("../tikz-dataset-clean/data"),
     output_dir=Path("../tikz-dataset-clean/dataset-exported"),
 
-    benchmark_samples_per_class=20,
+    benchmark_samples_per_class=5,
+    benchmark_noise_samples=25,
     val_samples_per_class=10,
     train_crystalbleu_size=50_000,
-    train_size=5_000,
+    train_size=5000,
 
     seed=42,
     overwrite=True,
@@ -68,7 +73,6 @@ CONFIG = Config(
     valid_repetition_classes=[
         "low",
         "medium",
-        "high",
     ],
 
     train_class_importance = {
@@ -115,10 +119,14 @@ CONFIG = Config(
     # Example:
     # benchmark_classes=["class_1", "class_4", "class_9"],
 
-    description_mix={
+    train_description_mix={
+        "llm_description_image": 0.5,
+        "llm_description": 0.5,
+        # "llm_description_image_code": 0.0,
+    },
+
+    benchmark_description_mix={
         "llm_description_image": 1.0,
-        # "llm_description": 0.5,
-        # "llm_description_image": 0.5,
         # "llm_description_image_code": 0.0,
     },
 )

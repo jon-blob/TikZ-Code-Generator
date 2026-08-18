@@ -214,8 +214,13 @@ def is_noise(sample: Sample, noise_class: str) -> bool:
 
 def repetition_candidates(
     samples: Iterable[Sample],
-    valid_repetition_classes: Sequence[str],
+    valid_repetition_classes: Sequence[str] | None,
 ) -> list[Sample]:
+    # None intentionally means no repetition filter. This is used by
+    # CrystalBLEU so low/medium/high/very_high/critical are all eligible.
+    if valid_repetition_classes is None:
+        return list(samples)
+
     valid = valid_repetitions(valid_repetition_classes)
     return [
         sample
@@ -522,7 +527,7 @@ def choose_uniform_with_noise_fallback(
     total: int,
     prefer_described: bool | None,
     rng: random.Random,
-    valid_repetition_classes: Sequence[str],
+    valid_repetition_classes: Sequence[str] | None,
     noise_class: str,
     label: str,
 ) -> set[tuple[int, int]]:
@@ -644,18 +649,21 @@ def choose_benchmark_with_noise_fallback(
     samples: Iterable[Sample],
     class_names: Sequence[str],
     count_per_class: int,
+    noise_samples: int,
     prefer_described: bool,
     rng: random.Random,
     valid_repetition_classes: Sequence[str],
     noise_class: str,
 ) -> set[tuple[int, int]]:
     """
-    Select a fixed target for each benchmark class.
+    Select a fixed target for each benchmark class plus an explicit noise class.
 
     Real samples are preferred and description-bearing real samples come first.
-    Any missing slots are filled globally from a random, non-reused noise pool.
+    Missing slots of real benchmark classes are filled from the same random,
+    non-reused noise pool. ``noise_samples`` then adds an explicit additional
+    noise quota on top of those fallback rows.
     """
-    if count_per_class <= 0 or not class_names:
+    if count_per_class <= 0 and noise_samples <= 0:
         return set()
 
     eligible = repetition_candidates(samples, valid_repetition_classes)
@@ -665,25 +673,35 @@ def choose_benchmark_with_noise_fallback(
     selected: set[tuple[int, int]] = set()
     total_missing = 0
 
-    for class_name in class_names:
-        rows = ordered_rows(groups[class_name], prefer_described, rng)
-        chosen = rows[:count_per_class]
-        selected.update(sample.key for sample in chosen)
-        missing = count_per_class - len(chosen)
-        total_missing += missing
-        print(
-            f"Benchmark {class_name}: {len(chosen):,}/{count_per_class:,} "
-            f"real, noise fallback={missing:,}"
-        )
+    if count_per_class > 0:
+        for class_name in class_names:
+            rows = ordered_rows(groups[class_name], prefer_described, rng)
+            chosen = rows[:count_per_class]
+            selected.update(sample.key for sample in chosen)
+            missing = count_per_class - len(chosen)
+            total_missing += missing
+            print(
+                f"Benchmark {class_name}: {len(chosen):,}/{count_per_class:,} "
+                f"real, noise fallback={missing:,}"
+            )
 
-    if total_missing > len(noise):
+    required_noise = total_missing + noise_samples
+    if required_noise > len(noise):
         raise ValueError(
-            f"Benchmark needs {total_missing:,} noise fallback samples but only "
+            f"Benchmark needs {required_noise:,} noise samples "
+            f"({total_missing:,} fallback + {noise_samples:,} explicit) but only "
             f"{len(noise):,} eligible noise samples are available."
         )
 
     rng.shuffle(noise)
-    selected.update(sample.key for sample in noise[:total_missing])
+    selected.update(sample.key for sample in noise[:required_noise])
+
+    if noise_samples > 0:
+        print(
+            f"Benchmark {noise_class}: {noise_samples:,} explicit samples "
+            f"(+ {total_missing:,} used as class fallback)"
+        )
+
     return selected
 
 

@@ -14,7 +14,7 @@ valid_repetition_classes=[
 ]
 ```
 
-Samples with any other `repetition_class` are excluded from train, validation, benchmark, CrystalBLEU, and noise fallback.
+Samples with any other `repetition_class` are excluded from train, validation, the selected benchmark subset, and their noise fallback. CrystalBLEU intentionally uses all repetition classes.
 
 ## Train image-class importance
 
@@ -71,7 +71,7 @@ benchmark_classes=None
 
 to use every observed non-noise class in the benchmark split.
 
-`benchmark_samples_per_class` remains a fixed target per requested benchmark class. If a requested class has fewer real samples than this target, all available real samples are used and the missing slots are filled with random eligible `noise` samples.
+`benchmark_samples_per_class` remains a fixed target per requested real benchmark class. If a requested class has fewer real samples than this target, all available real samples are used and the missing slots are filled with random eligible `noise` samples. In addition, `benchmark_noise_samples` controls a separate explicit noise-class quota for benchmark only.
 
 Example with `benchmark_samples_per_class=20`:
 
@@ -120,6 +120,7 @@ CONFIG = Config(
     output_dir=Path("../tikz-dataset-clean/dataset-exported"),
 
     benchmark_samples_per_class=20,
+    benchmark_noise_samples=50,
     val_samples_per_class=0,
     train_crystalbleu_size=0,
     train_size=5000,
@@ -172,3 +173,29 @@ python main.py
 ## Configuration file
 
 All user-editable export settings are centralized in `config.py`. In particular, `IMPORTANCE_WEIGHTS` controls the numeric ratios between `none`, `not important`, `a bit important`, `really important`, and `extremely important`. `CONFIG` controls paths, split sizes, valid repetition classes, per-class importance, benchmark classes, and the description mix.
+
+
+## Current description and CrystalBLEU behavior
+
+Train/validation and benchmark descriptions are configured independently with
+`train_description_mix` and `benchmark_description_mix`.
+
+`valid_repetition_classes` applies to validation, train, and the selected benchmark subset.
+CrystalBLEU intentionally ignores this filter: all repetition classes, including
+`very_high` and `critical`, are eligible. Train CrystalBLEU is selected from the
+remainder after validation and train. Benchmark CrystalBLEU contains every remaining
+benchmark row after the selected benchmark subset, regardless of image class or
+repetition class.
+
+
+## Explicit benchmark noise class
+
+Benchmark can include `noise` as an explicit extra class without changing train behavior:
+
+```python
+benchmark_samples_per_class = 5
+benchmark_noise_samples = 25
+```
+
+If 23 real benchmark image classes are active, the regular target is `23 * 5 = 115` rows.
+The exporter then adds 25 explicit random eligible `noise` rows. Any noise rows needed to fill shortages of real benchmark classes are additional fallback rows and do not reduce the explicit 25-row noise quota. Train keeps its existing importance-weighted sampling and noise fallback unchanged.
