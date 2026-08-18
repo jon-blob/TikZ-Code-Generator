@@ -7,3 +7,4 @@ dataset-exported
 training/gemma4_finetuning/unsloth_compiled_cache
 data/1_analyze/repetition_test
 data/tikz-dataset-clean
+training/gemma4_finetuning/runs

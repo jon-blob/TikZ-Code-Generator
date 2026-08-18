@@ -3,13 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import torch
-from trl import SFTConfig
+from trl import SFTConfig, SFTTrainer
 from unsloth import FastVisionModel
 from unsloth.trainer import UnslothVisionDataCollator
 
 from debug_tools import DebugVisionDataCollator, audit_labels
 from tb_callback import LatexEvalCallback
-from repetition_loss import RepetitionAwareSFTTrainer
 
 
 def train_sft(cfg, model, processor, train_dataset, eval_dataset) -> None:
@@ -112,18 +111,13 @@ def train_sft(cfg, model, processor, train_dataset, eval_dataset) -> None:
     callback = LatexEvalCallback(
         processor=processor,
         image_paths=cfg.image_paths_for_callback,
-        descripion_paths=cfg.descripion_paths_for_callback,
         prompt=Path(cfg.instruction_path).read_text().strip(),
         output_dir=cfg.output_dir / "generations",
         max_new_tokens=getattr(cfg, "debug_max_new_tokens", 512),
         teacher_probe_batch=teacher_probe_batch,
     )
 
-    repetition_orders = getattr(cfg, "repetition_ngram_orders", (16,))
-    if isinstance(repetition_orders, list):
-        repetition_orders = tuple(repetition_orders)
-
-    trainer = RepetitionAwareSFTTrainer(
+    trainer = SFTTrainer(
         model=model,
         args=args,
         processing_class=processor,
@@ -131,17 +125,6 @@ def train_sft(cfg, model, processor, train_dataset, eval_dataset) -> None:
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         callbacks=[callback],
-
-        repetition_loss_enabled=getattr(cfg, "repetition_loss_enabled", True),
-        repetition_ngram_orders=repetition_orders,
-        repetition_free_occurrences=getattr(cfg, "repetition_free_occurrences", 2),
-        repetition_keep_every=getattr(cfg, "repetition_keep_every", 4),
-        repetition_protect_first_tokens=getattr(cfg, "repetition_protect_first_tokens", 32),
-        repetition_protect_last_tokens=getattr(cfg, "repetition_protect_last_tokens", 64),
-        repetition_max_mask_fraction=getattr(cfg, "repetition_max_mask_fraction", 0.35),
-        repetition_log_path=(
-            cfg.output_dir / "generations" / "repetition_loss_debug.jsonl"
-        ),
     )
 
     # Establish the pre-SFT baseline using the exact same callback and eval sample.

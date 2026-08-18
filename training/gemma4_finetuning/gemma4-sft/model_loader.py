@@ -12,7 +12,7 @@ def load_model(cfg):
     )
     model = FastVisionModel.get_peft_model(
         model,
-        finetune_vision_layers=False, #normal run was without vision layers
+        finetune_vision_layers=True, #normal run was without vision layers
         finetune_language_layers=True,
         finetune_attention_modules=True,
         finetune_mlp_modules=True,

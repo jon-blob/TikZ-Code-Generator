@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = Path("../../data/preprocessed/dataset-exported/train")
+DATA_DIR = Path("/home/jonas/PycharmProjects/TikZ-Code-Generator/data/tikz-dataset-clean/dataset-exported/train")
 MODELS_DIR = Path("/home/jonas/models")
 PROMPTFOO_DIR = ROOT.parent.parent / "evaluation" / "promptfoo"
 LATEX_DIR = ROOT / "latex"
@@ -71,20 +71,20 @@ class SFTConfig:
     debug_train_sample_logging: bool = True
 
     image_paths_for_callback = [
-            f"{DATA_DIR}/train/reference_image/class_1_00000001.png",
             f"{DATA_DIR}/train/reference_image/class_2_00000001.png",
-            f"{DATA_DIR}/train/reference_image/class_3_00000001.png",
             f"{DATA_DIR}/train/reference_image/class_4_00000001.png",
             f"{DATA_DIR}/train/reference_image/class_5_00000001.png",
             f"{DATA_DIR}/train/reference_image/class_6_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_7_00000001.png",
+            f"{DATA_DIR}/train/reference_image/class_8_00000001.png",
         ]
 
     descripion_paths_for_callback = [
                 None,
-                f"{DATA_DIR}/train/llm_description/class_2_00000001.txt",
-                f"{DATA_DIR}/train/llm_description/class_3_00000001.txt",
                 f"{DATA_DIR}/train/llm_description/class_4_00000001.txt",
                 f"{DATA_DIR}/train/llm_description/class_5_00000001.txt",
+                f"{DATA_DIR}/train/llm_description/class_6_00000001.txt",
+                f"{DATA_DIR}/train/llm_description/class_7_00000001.txt",
                 None,
     ]
 

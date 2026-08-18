@@ -22,7 +22,6 @@ class LatexEvalCallback(TrainerCallback):
         self,
         processor,
         image_paths,
-        descripion_paths,
         prompt,
         output_dir,
         max_new_tokens=512,
@@ -30,10 +29,6 @@ class LatexEvalCallback(TrainerCallback):
     ):
         self.processor = processor
         self.image_paths = [Path(path) for path in image_paths]
-        self.description_paths = [
-            None if path is None else Path(path)
-            for path in descripion_paths
-        ]
         self.prompt = prompt
         self.output_dir = Path(output_dir)
         self.max_new_tokens = int(max_new_tokens)
@@ -98,26 +93,6 @@ class LatexEvalCallback(TrainerCallback):
                 for index, image_path in enumerate(self.image_paths, start=1):
                     print(f"[CALLBACK] Bild {index} vorbereiten", flush=True)
 
-                    final_prompt = self.prompt
-
-                    try:
-                        if self.description_paths[index - 1] is not None:
-                            description_path = self.description_paths[index-1]
-                            with open(description_path, "r") as descr_file:
-                                description = descr_file.read()
-
-                            final_prompt += (
-                                        "\n\nAdditionally, here is a description of the image "
-                                        "with some creation hints:\n"
-                                        f"{description.strip()}"
-                                    )
-                        else:
-                            final_prompt = self.prompt
-
-                        print(final_prompt)
-                    except Exception:
-                        print("no description file found.")
-
                     try:
                         with Image.open(image_path) as image:
                             image = image.convert("RGB")
@@ -126,7 +101,7 @@ class LatexEvalCallback(TrainerCallback):
                                 "role": "user",
                                 "content": [
                                     {"type": "image", "image": image},
-                                    {"type": "text", "text": final_prompt},
+                                    {"type": "text", "text": self.prompt},
                                 ],
                             }]
 
