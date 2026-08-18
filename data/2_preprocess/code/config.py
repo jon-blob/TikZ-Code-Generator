@@ -55,7 +55,7 @@ TOKEN_BATCH_SIZE = 64
 # Rendering
 IMAGE_SIZE = 512
 DPI = 400
-LATEX_TIMEOUT = 45
+LATEX_TIMEOUT = 20
 LATEX_BIN_DIR: Path | None = Path("/usr/local/texlive/2026/bin/x86_64-linux")
 LATEX_ENGINES = ("pdflatex", "lualatex", "xelatex")
 RENDER_WORKERS = max(1, min(8, os.cpu_count() or 1))
@@ -76,18 +76,19 @@ IMAGE_SIMILARITY_THRESHOLDS = {
 CLUSTER_DATASETS = ("datikz", "benchmark")
 
 # Local repetition classification
-REPETITION_NGRAM_ORDERS = (1, 2, 3, 4)
+REPETITION_NGRAM_ORDERS = (2, 3, 4, 6)
 REPETITION_NGRAM_WEIGHTS = {
-    1: 0.40,
-    2: 0.30,
-    3: 0.20,
-    4: 0.10,
+    2: 0.35,
+    3: 0.30,
+    4: 0.20,
+    6: 0.20,
 }
-REPETITION_MIN_REPEAT_COUNT = 2
-REPETITION_MEDIUM_THRESHOLD = 0.40
-REPETITION_HIGH_THRESHOLD = 0.50
-REPETITION_VERY_HIGH_THRESHOLD = 0.70
-REPETITION_CRITICAL_THRESHOLD = 0.80
+
+REPETITION_MIN_REPEAT_COUNT = 3
+REPETITION_MEDIUM_THRESHOLD = 0.25
+REPETITION_HIGH_THRESHOLD = 0.45
+REPETITION_VERY_HIGH_THRESHOLD = 0.65
+REPETITION_CRITICAL_THRESHOLD = 0.85
 REPETITION_CLASSES = ("low", "medium", "high", "very_high", "critical")
 REPETITION_BATCH_SIZE = 256
 
@@ -112,24 +113,24 @@ CLASS_NAMES: dict[int, str] = {}
 
 # Description generation
 # Allowed values: "code", "image", "image_code".
-DESCRIPTION_TYPES = ["code"]
+DESCRIPTION_TYPES = ["code", "image"]
 DESCRIPTIONS_PER_REPETITION_CLASS = {
-    "low": 30,
-    "medium": 10,
-    "high": 1,
-    "very_high": 1,
-    "critical": 1,
+    "low": 100,
+    "medium": 200,
+    "high": 600,
+    "very_high": 100,
+    "critical": 100,
 }
 DESCRIPTION_CANDIDATE_FACTOR = 3
 OLLAMA_URL = "http://localhost:11434"
-OLLAMA_TEXT_MODEL = "qwen3-coder:30b-a3b-q4_K_M"
-OLLAMA_VISION_MODEL = "gemma4:31b"
+OLLAMA_TEXT_MODEL = "gemma4:31b-it-q8_0"
+OLLAMA_VISION_MODEL = "gemma4:31b-it-q8_0"
 OLLAMA_TIMEOUT = 1_800
 OLLAMA_RETRIES = 1
-OLLAMA_PARALLEL_REQUESTS = 1
+OLLAMA_PARALLEL_REQUESTS = 5
 OLLAMA_TEMPERATURE = 0.1
-OLLAMA_NUM_PREDICT = 2048
-OLLAMA_NUM_CTX = 16384
+OLLAMA_NUM_PREDICT = 4096
+OLLAMA_NUM_CTX = 8192
 
 # Parquet and upload
 MAX_PARQUET_BYTES = 134_000_000
