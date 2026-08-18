@@ -138,7 +138,7 @@ PARQUET_BUFFER_BYTES = 110_000_000
 STAGING_ROWS_PER_FILE = 10_000
 HF_REPO_ID = "loss-boss/tikz-dataset-clean"
 HF_PRIVATE = False
-HF_TOKEN: str | None = "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"  # Authenticate with `hf auth login` or set securely at runtime.
+HF_TOKEN: str | None = "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"  # use `hf auth login`
 
 # Execution
 OVERWRITE = True

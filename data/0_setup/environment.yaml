@@ -11,6 +11,7 @@ dependencies:
 
   - pip:
       - datasets==5.0.0
+      - huggingface_hub
       - multiprocess==0.70.17
       - dill==0.4.1
       - pyarrow==25.0.0
