@@ -22,7 +22,7 @@
           contentType: image/png
           source:
             type: path
-            path: "{{reference_image}}"
+            path: "{{input_image}}"
 
         - &ollama_description
           kind: file
