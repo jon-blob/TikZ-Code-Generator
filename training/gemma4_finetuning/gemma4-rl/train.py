@@ -27,6 +27,8 @@ def main() -> None:
 
     model, processor = load_model(cfg)
     dataset = DaTikZDataset(cfg, processor)
+    print(f"RL dataset rows: {len(dataset):,}")
+    print(f"RL manifest order preserved: shuffle_dataset={cfg.shuffle_dataset}")
     train_grpo(cfg, model, processor, dataset)
 
 

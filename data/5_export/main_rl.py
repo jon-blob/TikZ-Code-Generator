@@ -70,9 +70,9 @@ def _print_distribution(samples) -> None:
 
 
 def run_rl(config: Config) -> None:
-    if config.train_size is None or config.train_size <= 0:
+    if config.rl_train_size is None or config.rl_train_size <= 0:
         raise ValueError(
-            "RL export requires CONFIG.train_size to be a positive integer"
+            "RL export requires CONFIG.rl_train_size to be a positive integer"
         )
 
     if not 0.0 <= RL_LOW_FRACTION <= 1.0:
@@ -82,7 +82,7 @@ def run_rl(config: Config) -> None:
     samples = scan(files, config.train_description_mix)
     rng = random.Random(config.seed + 30_000)
 
-    total = config.train_size
+    total = config.rl_train_size
     low_target = round(total * RL_LOW_FRACTION)
     hard_target = total - low_target
 
@@ -124,7 +124,7 @@ def run_rl(config: Config) -> None:
         )
 
     # RL only exports its train split. CrystalBLEU is reused from the SFT export.
-    output = config.output_dir / "rl"
+    output = config.rl_output_dir
     prepare_output(output, config.overwrite)
 
     train_output = output / "train"

@@ -13,13 +13,14 @@ def load_model(cfg):
     if not getattr(model, "peft_config", None):
         model = FastVisionModel.get_peft_model(
             model,
-            finetune_vision_layers=False,
+            finetune_vision_layers=True,
             finetune_language_layers=True,
             finetune_attention_modules=True,
-            finetune_mlp_modules=False,
+            finetune_mlp_modules=True,
             r=cfg.lora_rank,
             lora_alpha=cfg.lora_alpha,
             random_state=cfg.seed,
+            lora_dropout=cfg.lora_dropout,
             use_gradient_checkpointing=(
                 "unsloth" if cfg.gradient_checkpointing else False
             ),
