@@ -6,7 +6,7 @@ from collections import Counter
 from config import Config
 
 from helpers import (
-    choose_per_class,
+    choose_validation_with_noise_fallback,
     choose_uniform_with_noise_fallback,
     choose_weighted_with_noise_fallback,
     export_crystalbleu,
@@ -53,13 +53,15 @@ def run_train(config: Config) -> None:
         config.noise_class,
     )
 
-    val_keys = choose_per_class(
+    val_keys = choose_validation_with_noise_fallback(
         samples=samples,
         class_names=class_names,
-        count=config.val_samples_per_class,
+        count_per_class=config.val_samples_per_class,
+        noise_samples=config.val_noise_samples,
         prefer_described=True,
         rng=rng,
         valid_repetition_classes=config.valid_repetition_classes,
+        noise_class=config.noise_class,
     )
     after_val = without(samples, val_keys)
 

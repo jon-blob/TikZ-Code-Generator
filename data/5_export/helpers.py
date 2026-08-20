@@ -645,7 +645,7 @@ def choose_weighted_with_noise_fallback(
     return selected
 
 
-def choose_benchmark_with_noise_fallback(
+def choose_class_split_with_noise_fallback(
     samples: Iterable[Sample],
     class_names: Sequence[str],
     count_per_class: int,
@@ -654,14 +654,15 @@ def choose_benchmark_with_noise_fallback(
     rng: random.Random,
     valid_repetition_classes: Sequence[str],
     noise_class: str,
+    label: str,
 ) -> set[tuple[int, int]]:
     """
-    Select a fixed target for each benchmark class plus an explicit noise class.
+    Select a fixed target for each real class plus an explicit noise quota.
 
     Real samples are preferred and description-bearing real samples come first.
-    Missing slots of real benchmark classes are filled from the same random,
-    non-reused noise pool. ``noise_samples`` then adds an explicit additional
-    noise quota on top of those fallback rows.
+    Missing slots of real classes are filled from one random, non-reused noise
+    pool. ``noise_samples`` adds an explicit additional noise quota on top of
+    those fallback rows.
     """
     if count_per_class <= 0 and noise_samples <= 0:
         return set()
@@ -681,14 +682,14 @@ def choose_benchmark_with_noise_fallback(
             missing = count_per_class - len(chosen)
             total_missing += missing
             print(
-                f"Benchmark {class_name}: {len(chosen):,}/{count_per_class:,} "
+                f"{label} {class_name}: {len(chosen):,}/{count_per_class:,} "
                 f"real, noise fallback={missing:,}"
             )
 
     required_noise = total_missing + noise_samples
     if required_noise > len(noise):
         raise ValueError(
-            f"Benchmark needs {required_noise:,} noise samples "
+            f"{label} needs {required_noise:,} noise samples "
             f"({total_missing:,} fallback + {noise_samples:,} explicit) but only "
             f"{len(noise):,} eligible noise samples are available."
         )
@@ -698,11 +699,57 @@ def choose_benchmark_with_noise_fallback(
 
     if noise_samples > 0:
         print(
-            f"Benchmark {noise_class}: {noise_samples:,} explicit samples "
+            f"{label} {noise_class}: {noise_samples:,} explicit samples "
             f"(+ {total_missing:,} used as class fallback)"
         )
 
     return selected
+
+
+def choose_benchmark_with_noise_fallback(
+    samples: Iterable[Sample],
+    class_names: Sequence[str],
+    count_per_class: int,
+    noise_samples: int,
+    prefer_described: bool,
+    rng: random.Random,
+    valid_repetition_classes: Sequence[str],
+    noise_class: str,
+) -> set[tuple[int, int]]:
+    return choose_class_split_with_noise_fallback(
+        samples=samples,
+        class_names=class_names,
+        count_per_class=count_per_class,
+        noise_samples=noise_samples,
+        prefer_described=prefer_described,
+        rng=rng,
+        valid_repetition_classes=valid_repetition_classes,
+        noise_class=noise_class,
+        label="Benchmark",
+    )
+
+
+def choose_validation_with_noise_fallback(
+    samples: Iterable[Sample],
+    class_names: Sequence[str],
+    count_per_class: int,
+    noise_samples: int,
+    prefer_described: bool,
+    rng: random.Random,
+    valid_repetition_classes: Sequence[str],
+    noise_class: str,
+) -> set[tuple[int, int]]:
+    return choose_class_split_with_noise_fallback(
+        samples=samples,
+        class_names=class_names,
+        count_per_class=count_per_class,
+        noise_samples=noise_samples,
+        prefer_described=prefer_described,
+        rng=rng,
+        valid_repetition_classes=valid_repetition_classes,
+        noise_class=noise_class,
+        label="Validation",
+    )
 
 
 def without(

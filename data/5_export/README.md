@@ -121,7 +121,8 @@ CONFIG = Config(
 
     benchmark_samples_per_class=20,
     benchmark_noise_samples=50,
-    val_samples_per_class=0,
+    val_samples_per_class=10,
+    val_noise_samples=50,
     train_crystalbleu_size=0,
     train_size=5000,
 
@@ -231,3 +232,22 @@ dataset-exported/rl/
 `high` and `critical` are treated as one joint 75% pool; their internal ratio is
 not fixed. CrystalBLEU is selected after RL train from the full remaining train
 dataset and can use every repetition class.
+
+
+## Explicit validation noise class
+
+Validation now mirrors the benchmark sampling behavior for noise. Each active
+real train class targets `val_samples_per_class` rows. If a real class contains
+fewer eligible rows, its missing slots are filled with random, non-reused
+eligible `noise` rows. In addition, `val_noise_samples` adds a separate explicit
+noise quota for validation.
+
+```python
+val_samples_per_class = 10
+val_noise_samples = 50
+```
+
+The fallback noise rows are additional to the explicit `val_noise_samples`
+quota. Validation still uses `valid_repetition_classes`, prefers rows with a
+configured train description, and is removed from the pool before the weighted
+train selection. Train sampling itself is unchanged.

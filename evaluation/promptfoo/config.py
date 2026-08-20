@@ -7,12 +7,12 @@ ROOT = Path(__file__).resolve().parent
 
 @dataclass(frozen=True)
 class Paths:
-    data: Path = Path("/home/jonas/Datasets/TikZ/our_dataset_benchmark_merged/simple_llm_description")
+    data: Path = Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean-extended/sft-train/benchmark")
     manifest: Path = data / "manifest.csv"
-    images: Path = data / "images"
-    input_images: Path = data / "images"
-    references: Path = data / "references"
-    crystalbleu_corpus: Path = Path("/home/jonas/Datasets/TikZ/our_dataset_benchmark_merged/crystalbleu_corpus")
+    images: Path = data / "reference_image"
+    input_images: Path = data / "input_image"
+    references: Path = data / "reference_code"
+    crystalbleu_corpus: Path = Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean-extended/sft-train/benchmark/crystalbleu")
     results: Path = ROOT / "result"
     promptfoo_db: Path = results / "promptfoo-db"
     generated_images: Path = results / "generated_images"

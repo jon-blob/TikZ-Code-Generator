@@ -26,6 +26,7 @@ class Config:
     benchmark_samples_per_class: int = 20
     benchmark_noise_samples: int = 0
     val_samples_per_class: int = 20
+    val_noise_samples: int = 0
     train_crystalbleu_size: int = 50_000
     train_size: int | None = None
     rl_train_size: int | None = None
@@ -58,13 +59,14 @@ class Config:
 
 
 CONFIG = Config(
-    input_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean/data"),
-    output_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean/sft-train"),
-    rl_output_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean/rl-train"),
+    input_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean-extended/data"),
+    output_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean-extended/sft-train"),
+    rl_output_dir=Path("/home/jonas/Datasets/TikZ/tikz-dataset-clean-extended/rl-train"),
 
     benchmark_samples_per_class=5,
-    benchmark_noise_samples=50,
-    val_samples_per_class=10,
+    benchmark_noise_samples=130,
+    val_samples_per_class=5,
+    val_noise_samples=200,
     train_crystalbleu_size=50_000,
     train_size=200_000,
     rl_train_size=5000,
@@ -85,9 +87,9 @@ CONFIG = Config(
         "class_1": "a bit important",
         "class_2": "none",         # noted: possibly exclude
         "class_3": "none",
-        "class_4": "not important",      # annotation: definitions/theorems
+        "class_4": "none",      # annotation: definitions/theorems
         "class_5": "really important",
-        "class_6": "not important",
+        "class_6": "none",
         "class_7": "extremely important",
         "class_8": "not important",
         "class_9": "extremely important",
@@ -121,9 +123,7 @@ CONFIG = Config(
 
     benchmark_classes=[
         "class_1",
-        "class_4",
         "class_5",
-        "class_6",
         "class_7",
         "class_8",
         "class_9",
