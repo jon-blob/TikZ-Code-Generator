@@ -30,6 +30,18 @@ class Config:
     train_crystalbleu_size: int = 50_000
     train_size: int | None = None
     rl_train_size: int | None = None
+    rl_noise_samples: int = 0
+    # Distribution of the explicit RL noise samples across repetition classes.
+    # Values are relative fractions and must sum to 1.0 when rl_noise_samples > 0.
+    rl_noise_repetition_mix: Mapping[str, float] = field(
+        default_factory=lambda: {
+            "low": 0.20,
+            "medium": 0.20,
+            "high": 0.20,
+            "very_high": 0.20,
+            "critical": 0.20,
+        }
+    )
 
     seed: int = 42
     overwrite: bool = False
@@ -70,6 +82,17 @@ CONFIG = Config(
     train_crystalbleu_size=50_000,
     train_size=200_000,
     rl_train_size=5000,
+
+    # RL noise is added on top of rl_train_size.
+    # Example: rl_train_size=5000 and rl_noise_samples=500 -> 5500 RL rows.
+    rl_noise_samples=0,
+    rl_noise_repetition_mix={
+        "low": 0.20,
+        "medium": 0.20,
+        "high": 0.20,
+        "very_high": 0.20,
+        "critical": 0.20,
+    },
 
     seed=42,
     overwrite=True,

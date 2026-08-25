@@ -206,33 +206,55 @@ The exporter then adds 25 explicit random eligible `noise` rows. Any noise rows 
 Run:
 
 ```bash
-python export_rl.py
+python main_rl.py
 ```
 
-The RL export reuses the SFT train settings (`train_size`, image-class importance,
-description mix, noise fallback, seed/batch settings), but enforces this repetition
-composition for the RL train split:
+RL has its own output path and base train size:
+
+```python
+rl_output_dir=Path("../tikz-dataset-clean/rl-train"),
+rl_train_size=5000,
+```
+
+The base RL curriculum is selected independently from SFT:
 
 - 25% `low`
 - 75% from the combined `high` + `critical` pool
 
-The result is written to:
+The same train image-class importance and train description mix are used inside
+those two curriculum buckets.
 
-```text
-dataset-exported/rl/
-├── train/
-│   ├── input_image/
-│   ├── reference_image/
-│   ├── llm_description/
-│   ├── reference_code/
-│   └── manifest.csv
-└── crystalbleu/
+RL can additionally add an explicit random `noise` quota on top of
+`rl_train_size`:
+
+```python
+rl_noise_samples=500,
+rl_noise_repetition_classes=[
+    "low",
+    "high",
+    "critical",
+],
 ```
 
-`high` and `critical` are treated as one joint 75% pool; their internal ratio is
-not fixed. CrystalBLEU is selected after RL train from the full remaining train
-dataset and can use every repetition class.
+Only unused rows whose image class is `noise` and whose `repetition_class` is
+in `rl_noise_repetition_classes` are eligible for this explicit quota. The
+selection is random but reproducible from `seed`. It does not use description
+preference.
 
+For example, `rl_train_size=5000` and `rl_noise_samples=500` produce 5500 RL
+rows: 1250 rows from the low curriculum bucket, 3750 rows from the
+high+critical curriculum bucket, plus 500 explicit noise rows.
+
+The RL manifest is ordered as:
+
+```text
+low real samples
+-> high real samples
+-> critical real samples
+-> noise samples
+```
+
+RL does not create a CrystalBLEU corpus; it reuses the corpus created by SFT.
 
 ## Explicit validation noise class
 
@@ -251,3 +273,26 @@ The fallback noise rows are additional to the explicit `val_noise_samples`
 quota. Validation still uses `valid_repetition_classes`, prefers rows with a
 configured train description, and is removed from the pool before the weighted
 train selection. Train sampling itself is unchanged.
+
+
+## RL explicit noise repetition mix
+
+`rl_noise_samples` is added on top of `rl_train_size`. Its repetition-class
+composition is controlled independently with `rl_noise_repetition_mix`:
+
+```python
+rl_noise_samples=1000,
+rl_noise_repetition_mix={
+    "low": 0.10,
+    "medium": 0.15,
+    "high": 0.25,
+    "very_high": 0.20,
+    "critical": 0.30,
+},
+```
+
+The values must sum to `1.0`. The exporter converts the percentages into exact
+integer quotas whose sum is exactly `rl_noise_samples`. Samples are chosen
+randomly inside each repetition class. If one repetition class does not contain
+enough unused noise samples for its quota, the RL export stops with an error
+instead of silently redistributing the missing quota.
